@@ -1,0 +1,17 @@
+rule "swift_standards" {
+  description = "Enforce Swift language standards"
+  when = "writing or modifying Swift code"
+  then = "Use Swift 5.9+ syntax, follow Swift API Design Guidelines, prefer declarative code"
+}
+
+rule "swiftui_first" {
+  description = "Use SwiftUI for UI components"
+  when = "creating UI components"
+  then = "Use SwiftUI first, avoid UIKit unless necessary"
+}
+
+rule "code_organization" {
+  description = "Organize code for maintainability"
+  when = "structuring code files"
+  then = "Use extensions and // MARK: comments to organize code, keep files focused on single responsibilities"
+}

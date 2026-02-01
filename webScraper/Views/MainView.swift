@@ -300,8 +300,13 @@ struct ProjectDetailView: View {
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
-                    Link(project.startURL, destination: URL(string: project.startURL)!)
+                    if let url = URL(string: project.startURL) {
+                        Link(project.startURL, destination: url)
                         .font(.subheadline)
+                    } else {
+                        Text(project.startURL)
+                            .font(.subheadline)
+                    }
                 }
                 
                 // Stats

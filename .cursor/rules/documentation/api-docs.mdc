@@ -1,0 +1,10 @@
+# API Documentation
+
+## Public APIs
+- Document all public methods and properties
+- Include parameter descriptions and return values
+- Provide usage examples for complex APIs
+
+## Error Documentation
+- Document possible errors
+- Explain recovery strategies

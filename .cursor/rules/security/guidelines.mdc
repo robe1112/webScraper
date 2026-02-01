@@ -1,0 +1,25 @@
+# Security Guidelines
+
+## Data Protection
+- Never commit API keys or sensitive data
+- Use Keychain for credentials
+- Validate and sanitize user input
+
+## Network Security
+- Use HTTPS for all communications
+- Implement proper certificate validation
+
+
+## Code Security
+- Avoid logging sensitive information
+- Use secure coding practices
+- Implement proper input sanitization
+
+## Dependencies
+- Keep dependencies up to date
+- Audit dependencies for vulnerabilities
+- Consider security implications of third-party libraries
+
+## Access Control
+- Use appropriate access levels
+- Follow principle of least privilege

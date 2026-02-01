@@ -1,0 +1,16 @@
+# Data & State Management
+
+## Data Storage
+- CoreData for complex models
+- UserDefaults for simple preferences
+- Choose storage based on complexity needs
+
+## Reactive Programming
+- Use Combine for reactive data flow
+- Implement proper data binding
+
+## Data Flow
+- Maintain single source of truth
+- Implement unidirectional data flow
+- Avoid tight coupling between components
+- Handle state restoration for app lifecycle

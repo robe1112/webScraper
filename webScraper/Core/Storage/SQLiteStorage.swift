@@ -10,6 +10,7 @@ import SQLite3
 
 /// SQLite implementation of StorageProvider
 /// Lightweight and portable, good for simple storage needs
+@MainActor
 final class SQLiteStorage: StorageProvider {
     
     // MARK: - Properties

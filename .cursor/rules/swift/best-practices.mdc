@@ -1,0 +1,25 @@
+# Swift Best Practices
+
+## Type System
+- Use strong types and proper optionals
+- Avoid force unwrapping
+- Use optional binding (if let, guard let) appropriately
+
+## Concurrency
+- Use async/await for concurrency
+- Use @MainActor for UI code
+- Avoid data races with proper synchronization
+
+## Property Wrappers
+- @State for local view state
+- @StateObject for view-owned observable objects
+- @ObservedObject for external data sources
+- @Binding for two-way data binding
+- @Environment for app-wide settings
+- @Published for observable properties
+
+## Code Style
+- Prefer let over var
+- Use protocol extensions for shared code
+- Use enums for state management
+- Keep functions focused and single-purpose

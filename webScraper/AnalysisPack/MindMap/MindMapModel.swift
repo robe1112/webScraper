@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 /// Represents a mind map structure
-struct MindMap: Identifiable, Codable {
+struct MindMap: Identifiable, Codable, Hashable {
     let id: UUID
     var name: String
     var description: String?
@@ -187,7 +187,7 @@ struct NodeLink: Identifiable, Codable, Hashable {
 }
 
 /// Visual style for mind maps
-struct MindMapStyle: Codable {
+struct MindMapStyle: Codable, Hashable {
     var layout: LayoutStyle
     var colorScheme: ColorScheme
     var nodeShape: NodeShape

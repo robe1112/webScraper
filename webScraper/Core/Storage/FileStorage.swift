@@ -9,6 +9,7 @@ import Foundation
 
 /// File-based implementation of StorageProvider
 /// Uses JSON files for storage - simple and human-readable
+@MainActor
 final class FileStorage: StorageProvider {
     
     // MARK: - Properties

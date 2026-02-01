@@ -1,0 +1,26 @@
+# Development Workflow
+
+## General Guidelines
+- Follow user requirements carefully & to the letter
+- Think step-by-step before coding
+- Write correct, bug-free, fully functional code
+- Focus on readability over performance
+- Leave NO todos or placeholders
+- Be concise
+
+## Development Process
+- Use SwiftUI previews for rapid iteration
+- Follow Git branching strategy
+- Write descriptive commit messages
+- Review code before merging
+- Aim for high test coverage
+
+## Dependencies
+- Prefer Swift Package Manager
+- Keep dependencies up to date
+- Document why dependencies are needed
+
+## Testing
+- Test on multiple device sizes
+- Verify different network conditions
+- Test with accessibility features enabled

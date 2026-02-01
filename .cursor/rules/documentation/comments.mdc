@@ -1,0 +1,12 @@
+# Documentation
+
+## Code Comments
+- Use /// for documentation comments on public APIs
+- Use // MARK: to organize code sections
+- Explain "why" not "what"
+- Keep comments up-to-date
+
+## SwiftUI Documentation
+- Document view purposes
+- Explain complex view hierarchies
+- Document custom modifiers

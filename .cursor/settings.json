@@ -1,0 +1,33 @@
+{
+  "rules": {
+    "enabled": true,
+    "directory": ".cursor/rules",
+    "extensions": [".mdc"],
+    "autoLoad": true
+  },
+  "swift": {
+    "rules": {
+      "enabled": true,
+      "files": [
+        ".cursor/rules/style/formatting.mdc",
+        ".cursor/rules/style/naming.mdc",
+        ".cursor/rules/testing/unit-tests.mdc",
+        ".cursor/rules/testing/integration-tests.mdc",
+        ".cursor/rules/architecture/patterns.mdc",
+        ".cursor/rules/performance/optimization.mdc",
+        ".cursor/rules/security/guidelines.mdc",
+        ".cursor/rules/workflow/development.mdc",
+        ".cursor/rules/system/validation.mdc",
+        ".cursor/rules/error-handling/exceptions.mdc",
+        ".cursor/rules/documentation/api-docs.mdc",
+        ".cursor/rules/documentation/comments.mdc"
+      ]
+    }
+  }
+}
+
+
+
+
+
+

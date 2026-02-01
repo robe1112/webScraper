@@ -7,6 +7,7 @@
 
 import Foundation
 import CryptoKit
+import ImageIO
 
 /// Downloads and manages files from scraped URLs
 /// Handles concurrent downloads, progress tracking, and organization

@@ -1,0 +1,15 @@
+# Integration Testing
+
+## UI Testing
+- Use UI tests for critical user workflows
+- Test accessibility features
+
+## System Integration
+- Test network integration
+- Verify data persistence
+- Test component interactions
+
+## Performance Testing
+- Use Instruments for profiling
+- Test memory usage
+- Verify performance under load

@@ -1,0 +1,28 @@
+# UI Development
+
+## Apple Human Interface Guidelines
+- ALWAYS follow Apple's HIG: https://developer.apple.com/design/human-interface-guidelines
+- Single-window utility apps should quit when window closes
+- Document-based apps should stay running with reopenable windows
+- When in doubt, consult the official HIG documentation
+
+## Icons and Symbols
+- Use SF Symbols for icons
+- Prefer system symbols over custom icons
+
+## Accessibility
+- Support dark mode and dynamic type
+- Include accessibility labels and hints
+- Support VoiceOver navigation
+- Test with accessibility features enabled
+
+## Layout
+- Use SafeArea and GeometryReader for layout
+- Handle all screen sizes and orientations
+- Use LazyVStack/LazyHStack for large lists
+- Implement proper loading and empty states
+
+## Interaction
+- Implement proper keyboard handling
+- Use animations sparingly and purposefully
+- Implement proper menu bar behavior and keyboard shortcuts (macOS)

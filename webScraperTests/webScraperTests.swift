@@ -2,7 +2,8 @@
 //  webScraperTests.swift
 //  webScraperTests
 //
-//  Created by Rob Evans on 1/31/26.
+//  Main test suite entry - see Core/ for unit tests
+//  Follows .cursor/rules: @testable import, Arrange-Act-Assert, focused tests
 //
 
 import Testing
@@ -10,8 +11,9 @@ import Testing
 
 struct webScraperTests {
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    @Test("Test suite is properly configured")
+    func testSuiteConfigured() throws {
+        // Verify @testable import works and core types are accessible
+        #expect(URLValidator.validate("https://example.com").isValid == true)
     }
-
 }

@@ -35,12 +35,12 @@ struct URLValidator {
         }
         
         // Check for host
-        guard url.host != nil, !url.host!.isEmpty else {
+        guard let host = url.host, !host.isEmpty else {
             return .invalid(reason: "URL must include a host")
         }
         
         // Check for localhost/internal IPs (warning, not invalid)
-        if isLocalAddress(url.host!) {
+        if isLocalAddress(host) {
             return .warning(url: url, message: "This appears to be a local address")
         }
         
@@ -59,46 +59,47 @@ struct URLValidator {
     
     /// Normalize a URL for comparison and deduplication
     static func normalize(_ url: URL) -> String {
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: true)
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
+            return url.absoluteString
+        }
         
         // Lowercase scheme and host
-        components?.scheme = components?.scheme?.lowercased()
-        components?.host = components?.host?.lowercased()
+        components.scheme = components.scheme?.lowercased()
+        components.host = components.host?.lowercased()
         
         // Remove default ports
-        if components?.port == 80 && components?.scheme == "http" {
-            components?.port = nil
+        if components.port == 80 && components.scheme == "http" {
+            components.port = nil
         }
-        if components?.port == 443 && components?.scheme == "https" {
-            components?.port = nil
+        if components.port == 443 && components.scheme == "https" {
+            components.port = nil
         }
         
         // Remove fragment
-        components?.fragment = nil
+        components.fragment = nil
         
         // Sort query parameters
-        if var queryItems = components?.queryItems, !queryItems.isEmpty {
+        if var queryItems = components.queryItems, !queryItems.isEmpty {
             // Remove empty values
-            queryItems = queryItems.filter { $0.value != nil && !$0.value!.isEmpty }
+            queryItems = queryItems.filter { $0.value.map { !$0.isEmpty } ?? false }
             // Sort by name
             queryItems.sort { $0.name < $1.name }
-            components?.queryItems = queryItems.isEmpty ? nil : queryItems
+            components.queryItems = queryItems.isEmpty ? nil : queryItems
         }
         
         // Normalize path
-        if var path = components?.path {
-            // Remove trailing slash (except for root)
-            if path.count > 1 && path.hasSuffix("/") {
-                path = String(path.dropLast())
-            }
-            // Collapse multiple slashes
-            while path.contains("//") {
-                path = path.replacingOccurrences(of: "//", with: "/")
-            }
-            components?.path = path
+        var path = components.path
+        // Remove trailing slash (except for root)
+        if path.count > 1 && path.hasSuffix("/") {
+            path = String(path.dropLast())
         }
+        // Collapse multiple slashes
+        while path.contains("//") {
+            path = path.replacingOccurrences(of: "//", with: "/")
+        }
+        components.path = path
         
-        return components?.url?.absoluteString ?? url.absoluteString
+        return components.url?.absoluteString ?? url.absoluteString
     }
     
     /// Resolve a relative URL against a base URL

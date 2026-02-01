@@ -7,6 +7,33 @@
 
 import Foundation
 
+/// Options for mind map generation
+struct MindMapGenerationOptions {
+    var maxDepth: Int
+    var maxNodesPerLevel: Int
+    var includeMetadata: Bool
+    var groupByType: Bool
+    var sortBy: MindMapGenerationOptions.SortOption
+    var style: MindMapStyle
+    
+    enum SortOption {
+        case alphabetical
+        case frequency
+        case date
+        case size
+        case relevance
+    }
+    
+    static let `default` = MindMapGenerationOptions(
+        maxDepth: 5,
+        maxNodesPerLevel: 10,
+        includeMetadata: true,
+        groupByType: true,
+        sortBy: .frequency,
+        style: .default
+    )
+}
+
 /// Generates mind maps from various data sources
 actor MindMapGenerator {
     
@@ -21,36 +48,10 @@ actor MindMapGenerator {
         case custom(title: String, items: [String])
     }
     
-    struct GenerationOptions {
-        var maxDepth: Int
-        var maxNodesPerLevel: Int
-        var includeMetadata: Bool
-        var groupByType: Bool
-        var sortBy: SortOption
-        var style: MindMapStyle
-        
-        enum SortOption {
-            case alphabetical
-            case frequency
-            case date
-            case size
-            case relevance
-        }
-        
-        static let `default` = GenerationOptions(
-            maxDepth: 5,
-            maxNodesPerLevel: 10,
-            includeMetadata: true,
-            groupByType: true,
-            sortBy: .frequency,
-            style: .default
-        )
-    }
-    
     // MARK: - Public Methods
     
     /// Generate a mind map from a source
-    func generate(from source: GenerationSource, name: String, options: GenerationOptions = .default) async -> MindMap {
+    func generate(from source: GenerationSource, name: String, options: MindMapGenerationOptions = .default) async -> MindMap {
         switch source {
         case .siteMap(let tree):
             return generateFromSiteMap(tree, name: name, options: options)
@@ -68,7 +69,7 @@ actor MindMapGenerator {
     }
     
     /// Generate mind map from site structure
-    func generateFromSiteMap(_ tree: SiteMapTree, name: String, options: GenerationOptions) -> MindMap {
+    func generateFromSiteMap(_ tree: SiteMapTree, name: String, options: MindMapGenerationOptions) -> MindMap {
         let rootNode = convertSiteTreeToMindMapNode(tree, depth: 0, options: options)
         
         return MindMap(
@@ -80,7 +81,7 @@ actor MindMapGenerator {
     }
     
     /// Generate mind map from downloaded files
-    func generateFromDocuments(_ files: [DownloadedFile], name: String, options: GenerationOptions) -> MindMap {
+    func generateFromDocuments(_ files: [DownloadedFile], name: String, options: MindMapGenerationOptions) -> MindMap {
         var rootNode = MindMapNode(text: name, type: .root)
         
         if options.groupByType {
@@ -138,7 +139,7 @@ actor MindMapGenerator {
     }
     
     /// Generate mind map from scraped pages
-    func generateFromPages(_ pages: [ScrapedPage], name: String, options: GenerationOptions) -> MindMap {
+    func generateFromPages(_ pages: [ScrapedPage], name: String, options: MindMapGenerationOptions) -> MindMap {
         var rootNode = MindMapNode(text: name, type: .root)
         
         // Group by domain or depth
@@ -182,7 +183,7 @@ actor MindMapGenerator {
     }
     
     /// Generate mind map from extracted entities
-    func generateFromEntities(_ entities: [ExtractedEntity], name: String, options: GenerationOptions) -> MindMap {
+    func generateFromEntities(_ entities: [ExtractedEntity], name: String, options: MindMapGenerationOptions) -> MindMap {
         var rootNode = MindMapNode(text: name, type: .root)
         
         // Group by entity type
@@ -192,8 +193,8 @@ actor MindMapGenerator {
             var typeNode = MindMapNode(
                 text: entityType.rawValue,
                 type: .topic,
-                icon: iconForEntityType(entityType),
-                color: colorForEntityType(entityType)
+                color: colorForEntityType(entityType),
+                icon: iconForEntityType(entityType)
             )
             
             // Group identical entities and count frequency
@@ -228,7 +229,7 @@ actor MindMapGenerator {
     }
     
     /// Generate mind map from keywords
-    func generateFromKeywords(_ keywords: [String: Int], name: String, options: GenerationOptions) -> MindMap {
+    func generateFromKeywords(_ keywords: [String: Int], name: String, options: MindMapGenerationOptions) -> MindMap {
         var rootNode = MindMapNode(text: name, type: .root)
         
         let sortedKeywords = keywords.sorted { $0.value > $1.value }
@@ -272,7 +273,7 @@ actor MindMapGenerator {
     }
     
     /// Generate custom mind map from string items
-    func generateCustom(title: String, items: [String], name: String, options: GenerationOptions) -> MindMap {
+    func generateCustom(title: String, items: [String], name: String, options: MindMapGenerationOptions) -> MindMap {
         var rootNode = MindMapNode(text: title, type: .root)
         
         for item in items.prefix(options.maxNodesPerLevel * 5) {
@@ -291,7 +292,7 @@ actor MindMapGenerator {
     // MARK: - AI-Assisted Generation
     
     /// Generate mind map using AI to analyze content
-    func generateWithAI(from text: String, name: String, options: GenerationOptions) async throws -> MindMap {
+    func generateWithAI(from text: String, name: String, options: MindMapGenerationOptions) async throws -> MindMap {
         // This would use the LLM to:
         // 1. Extract main topics
         // 2. Identify subtopics and relationships
@@ -318,7 +319,7 @@ actor MindMapGenerator {
     
     // MARK: - Private Helpers
     
-    private func convertSiteTreeToMindMapNode(_ tree: SiteMapTree, depth: Int, options: GenerationOptions) -> MindMapNode {
+    private func convertSiteTreeToMindMapNode(_ tree: SiteMapTree, depth: Int, options: MindMapGenerationOptions) -> MindMapNode {
         guard depth <= options.maxDepth else {
             return MindMapNode(
                 text: tree.node.title ?? "...",
@@ -349,7 +350,7 @@ actor MindMapGenerator {
         return node
     }
     
-    private func sortFiles(_ files: [DownloadedFile], by option: GenerationOptions.SortOption) -> [DownloadedFile] {
+    private func sortFiles(_ files: [DownloadedFile], by option: MindMapGenerationOptions.SortOption) -> [DownloadedFile] {
         switch option {
         case .alphabetical:
             return files.sorted { $0.fileName < $1.fileName }
@@ -380,7 +381,18 @@ actor MindMapGenerator {
     }
     
     private func iconForEntityType(_ type: EntityType) -> String {
-        type.icon
+        switch type {
+        case .person: return "person.fill"
+        case .organization: return "building.2.fill"
+        case .location: return "mappin.circle.fill"
+        case .date: return "calendar"
+        case .time: return "clock.fill"
+        case .money: return "dollarsign.circle.fill"
+        case .email: return "envelope.fill"
+        case .phone: return "phone.fill"
+        case .url: return "link"
+        case .custom: return "tag.fill"
+        }
     }
     
     private func colorForEntityType(_ type: EntityType) -> NodeColor {

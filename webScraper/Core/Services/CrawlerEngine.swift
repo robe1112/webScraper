@@ -200,13 +200,13 @@ actor CrawlerEngine {
         
         await delegate?.crawler(self, didUpdateProgress: progress)
         
-        // Initialize JS renderer if needed
+        // Initialize JS renderer if needed (JSRenderer is @MainActor)
         if configuration.enableJavaScript {
-            await MainActor.run {
-                jsRenderer = JSRenderer(configuration: JSRenderer.Configuration(
-                    userAgent: configuration.userAgent
-                ))
+            let userAgent = configuration.userAgent
+            let newRenderer = await MainActor.run {
+                JSRenderer(configuration: JSRenderer.Configuration(userAgent: userAgent))
             }
+            jsRenderer = newRenderer
         }
         
         // Check robots.txt
@@ -350,10 +350,10 @@ actor CrawlerEngine {
         let finalURL: URL
         
         if configuration.enableJavaScript, let renderer = jsRenderer {
-            // Use JavaScript renderer
-            let result = try await MainActor.run {
+            // Use JavaScript renderer (runs on MainActor)
+            let result = try await Task { @MainActor in
                 try await renderer.render(url: url)
-            }
+            }.value
             html = result.htmlContent
             finalURL = result.finalURL
         } else {

@@ -166,14 +166,16 @@ final class PluginManager: ObservableObject {
                     if enriched == nil {
                         enriched = result
                     } else {
-                        // Merge fields (later plugins override earlier ones)
-                        enriched?.summary = result.summary ?? enriched?.summary
-                        enriched?.keywords = result.keywords ?? enriched?.keywords
-                        enriched?.entities = result.entities ?? enriched?.entities
-                        enriched?.exifData = result.exifData ?? enriched?.exifData
-                        enriched?.pdfMetadata = result.pdfMetadata ?? enriched?.pdfMetadata
-                        enriched?.audioMetadata = result.audioMetadata ?? enriched?.audioMetadata
-                        enriched?.videoMetadata = result.videoMetadata ?? enriched?.videoMetadata
+                        // Merge fields (later plugins override earlier ones) - copy to avoid overlapping access
+                        var merged = enriched!
+                        merged.summary = result.summary ?? merged.summary
+                        merged.keywords = result.keywords ?? merged.keywords
+                        merged.entities = result.entities ?? merged.entities
+                        merged.exifData = result.exifData ?? merged.exifData
+                        merged.pdfMetadata = result.pdfMetadata ?? merged.pdfMetadata
+                        merged.audioMetadata = result.audioMetadata ?? merged.audioMetadata
+                        merged.videoMetadata = result.videoMetadata ?? merged.videoMetadata
+                        enriched = merged
                     }
                 }
             } catch {

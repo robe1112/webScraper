@@ -1,0 +1,11 @@
+rule "case_conventions" {
+  description = "Enforce Swift naming conventions"
+  when = "naming any code entity"
+  then = "Use camelCase for variables/functions/properties, PascalCase for types/protocols, suffix views with 'View'"
+}
+
+rule "descriptive_naming" {
+  description = "Use clear, descriptive names"
+  when = "creating any named entity"
+  then = "Use verbs for methods (fetchData), is/has/should prefixes for booleans, descriptive names that indicate purpose"
+}

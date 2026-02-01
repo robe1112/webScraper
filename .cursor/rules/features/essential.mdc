@@ -1,0 +1,23 @@
+# Essential Features (When Applicable)
+
+## Deep Linking
+- Handle URL schemes and universal links
+- Test deep linking thoroughly
+
+## Notifications
+- Handle permissions properly
+- Process in foreground and background
+
+## Background Tasks
+- Use background task APIs correctly
+- Respect system resource limits
+
+## Localization
+- Use NSLocalizedString for user-facing text
+- Handle locale-specific formatting
+- Test with different language settings
+
+## Logging
+- Use appropriate logging levels
+- Avoid logging sensitive information
+- Implement crash reporting

@@ -194,8 +194,8 @@ struct MindMapView: View {
                         .foregroundStyle(.secondary)
                     
                     ForEach(node.links) { link in
-                        if let url = link.url {
-                            Link(destination: URL(string: url)!) {
+                        if let urlString = link.url, let url = URL(string: urlString) {
+                            Link(destination: url) {
                                 Label(link.title, systemImage: "link")
                                     .font(.caption)
                             }

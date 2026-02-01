@@ -9,6 +9,7 @@ import Foundation
 
 /// Protocol for storage providers
 /// Allows switching between Core Data, SQLite, and file-based storage
+@MainActor
 protocol StorageProvider {
     
     /// Save an item to storage

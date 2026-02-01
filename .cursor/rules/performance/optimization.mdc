@@ -1,0 +1,21 @@
+# Performance Guidelines
+
+## Thread Management
+- Avoid expensive operations on main thread
+- Use @MainActor for UI updates
+- Perform network operations on background threads
+
+## Memory
+- Optimize image loading and caching
+- Use lazy loading for large data sets
+- Minimize view updates and redraws
+
+## Profiling
+- Use Instruments for performance profiling
+- Use breakpoints for debugging
+- Leverage SwiftUI previews for rapid iteration
+
+## Network
+- Implement proper caching strategies
+- Handle timeouts gracefully
+- Optimize data transfer sizes

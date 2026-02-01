@@ -1,0 +1,17 @@
+rule "error_handling" {
+  description = "Standardize error handling"
+  when = "implementing error handling"
+  then = "Use do-catch blocks, provide meaningful error messages, use custom Error enums with descriptive cases"
+}
+
+rule "error_propagation" {
+  description = "Handle error propagation"
+  when = "working with throwing functions"
+  then = "Propagate errors appropriately, log details for debugging, avoid silencing errors"
+}
+
+rule "network_errors" {
+  description = "Handle network errors"
+  when = "implementing network operations"
+  then = "Handle timeouts gracefully, provide user-friendly messages, implement retry logic where appropriate"
+}

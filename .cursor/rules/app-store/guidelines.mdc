@@ -1,0 +1,18 @@
+# App Store Guidelines
+
+## Privacy
+- Provide privacy descriptions in Info.plist
+- Request permissions only when needed
+- Comply with privacy regulations
+
+## Submission
+- Follow Apple's App Store Review Guidelines
+- Test thoroughly before submission
+- Use proper code signing
+- Test in TestFlight
+- Address rejection feedback promptly
+
+## Optimization
+- Enable app thinning
+- Use asset catalogs
+- Optimize binary size

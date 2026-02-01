@@ -1,0 +1,11 @@
+rule "test_structure" {
+  description = "Maintain proper test structure"
+  when = "writing tests"
+  then = "Use @testable import, mock dependencies, follow Arrange-Act-Assert pattern, keep tests focused"
+}
+
+rule "test_coverage" {
+  description = "Maintain test coverage"
+  when = "implementing tests"
+  then = "Cover business logic, test edge cases and errors, verify positive and negative scenarios"
+}

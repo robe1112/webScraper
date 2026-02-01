@@ -10,6 +10,7 @@ import CoreData
 
 /// Core Data implementation of StorageProvider
 /// Best for complex queries and relationships
+@MainActor
 final class CoreDataStorage: StorageProvider {
     
     // MARK: - Properties

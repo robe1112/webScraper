@@ -1,0 +1,5 @@
+rule "rule_debugging" {
+  description = "Debug rule issues"
+  when = "rules not working as expected"
+  then = "Check rule syntax, verify file location, ensure rules are loaded"
+}

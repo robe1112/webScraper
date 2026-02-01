@@ -54,13 +54,12 @@ final class AppState: ObservableObject {
     // MARK: - Initialization
     
     init(
-        featureFlags: FeatureFlags = FeatureFlags(),
+        featureFlags: FeatureFlags? = nil,
         storageProvider: StorageProvider? = nil
     ) {
-        self.featureFlags = featureFlags
-        self.pluginManager = PluginManager(featureFlags: featureFlags)
-        
-        // Default to Core Data storage
+        // Create defaults in init body (main actor) to avoid isolation issues with default params
+        self.featureFlags = featureFlags ?? FeatureFlags()
+        self.pluginManager = PluginManager(featureFlags: self.featureFlags)
         self.storageProvider = storageProvider ?? CoreDataStorage()
         
         setupBindings()

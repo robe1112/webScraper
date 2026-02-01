@@ -7,21 +7,20 @@
 
 import Foundation
 
+/// Statistics about a site map
+struct SiteMapStats: Codable {
+    var totalNodes: Int
+    var totalPages: Int
+    var totalResources: Int
+    var maxDepth: Int
+    var orphanPages: Int
+    var brokenLinks: Int
+    var externalLinks: Int
+}
+
 /// Builds and manages site map from crawled pages
 /// Creates hierarchical tree structure for visualization
 actor SiteMapBuilder {
-    
-    // MARK: - Types
-    
-    struct SiteMapStats {
-        var totalNodes: Int
-        var totalPages: Int
-        var totalResources: Int
-        var maxDepth: Int
-        var orphanPages: Int
-        var brokenLinks: Int
-        var externalLinks: Int
-    }
     
     // MARK: - Properties
     
@@ -65,7 +64,7 @@ actor SiteMapBuilder {
             title: title,
             statusCode: statusCode,
             contentType: contentType,
-            fileType: SiteNode.NodeFileType.detect(url: url.absoluteString, contentType: contentType),
+            fileType: NodeFileType.detect(url: url.absoluteString, contentType: contentType),
             nodeStatus: statusCode != nil ? .fetched : .discovered
         )
         
@@ -249,5 +248,3 @@ struct SiteMapExport: Codable {
     let stats: SiteMapStats
     let nodes: [SiteNode]
 }
-
-extension SiteMapStats: Codable {}

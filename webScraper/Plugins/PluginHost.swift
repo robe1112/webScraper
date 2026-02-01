@@ -103,12 +103,14 @@ struct PluginToolbar: ToolbarContent {
     let items: [PluginToolbarItem]
     
     var body: some ToolbarContent {
-        ForEach(items) { item in
-            Button(action: item.action) {
-                Label(item.title, systemImage: item.icon)
+        ToolbarItemGroup(placement: .automatic) {
+            ForEach(items) { item in
+                Button(action: item.action) {
+                    Label(item.title, systemImage: item.icon)
+                }
+                .disabled(!item.isEnabled)
+                .badge(item.badge)
             }
-            .disabled(!item.isEnabled)
-            .badge(item.badge)
         }
     }
 }

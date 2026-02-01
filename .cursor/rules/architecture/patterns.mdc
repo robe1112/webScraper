@@ -1,0 +1,18 @@
+# Architecture Guidelines
+
+## Design Patterns
+- Follow MVVM architecture pattern
+- Prefer value types (structs) over classes
+- Use dependency injection for testability
+- Use protocol-oriented programming
+
+## View Architecture
+- Keep views simple and focused
+- Extract reusable components into separate views
+- Use @ViewBuilder for complex view construction
+- Prefer composition over inheritance
+
+## Project Structure
+- Structure: Features/, Core/, UI/, Resources/
+- Group related files together
+- Keep files focused on single responsibilities
