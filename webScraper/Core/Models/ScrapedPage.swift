@@ -9,7 +9,8 @@ import Foundation
 
 /// Represents a single scraped web page
 /// Stores the raw content and extracted data
-struct ScrapedPage: Identifiable, Codable, Hashable {
+/// Sendable and nonisolated inits so it can be created from CrawlerEngine (non-MainActor actor)
+struct ScrapedPage: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     let jobId: UUID
     let url: String
@@ -46,7 +47,7 @@ struct ScrapedPage: Identifiable, Codable, Hashable {
     // Snapshot for diff tracking
     var snapshotHash: String?
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         jobId: UUID,
         url: String,
@@ -98,7 +99,7 @@ struct ScrapedPage: Identifiable, Codable, Hashable {
 }
 
 /// Processing status for a page
-enum PageProcessingStatus: String, Codable {
+enum PageProcessingStatus: String, Codable, Sendable {
     case pending = "Pending"
     case fetching = "Fetching"
     case parsing = "Parsing"
@@ -109,7 +110,7 @@ enum PageProcessingStatus: String, Codable {
 }
 
 /// A link discovered on a page
-struct DiscoveredLink: Codable, Hashable, Identifiable {
+struct DiscoveredLink: Codable, Hashable, Identifiable, Sendable {
     let id: UUID
     let url: String
     let text: String?
@@ -118,7 +119,7 @@ struct DiscoveredLink: Codable, Hashable, Identifiable {
     let linkType: LinkType
     var wasFollowed: Bool
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         url: String,
         text: String? = nil,
@@ -138,7 +139,7 @@ struct DiscoveredLink: Codable, Hashable, Identifiable {
 }
 
 /// Type of link
-enum LinkType: String, Codable {
+enum LinkType: String, Codable, Sendable {
     case `internal` = "Internal"
     case external = "External"
     case resource = "Resource"
@@ -147,10 +148,11 @@ enum LinkType: String, Codable {
     case tel = "Phone"
     case javascript = "JavaScript"
     case anchor = "Anchor"
+    case other = "Other"
 }
 
 /// A resource discovered on a page (image, script, stylesheet)
-struct DiscoveredResource: Codable, Hashable, Identifiable {
+struct DiscoveredResource: Codable, Hashable, Identifiable, Sendable {
     let id: UUID
     let url: String
     let alt: String?
@@ -158,7 +160,7 @@ struct DiscoveredResource: Codable, Hashable, Identifiable {
     var wasDownloaded: Bool
     var localPath: String?
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         url: String,
         alt: String? = nil,
@@ -176,7 +178,7 @@ struct DiscoveredResource: Codable, Hashable, Identifiable {
 }
 
 /// Value extracted using an extraction rule
-enum ExtractedValue: Codable, Hashable {
+enum ExtractedValue: Codable, Hashable, Sendable {
     case string(String)
     case strings([String])
     case number(Double)

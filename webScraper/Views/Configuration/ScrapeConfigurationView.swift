@@ -91,7 +91,7 @@ struct ScrapeConfigurationView: View {
     private var basicSettingsTab: some View {
         Form {
             Section("Target URL") {
-                TextField("https://example.com", text: $startURL)
+                TextField("https://example.com or file:///path/to/TestSite/index.html", text: $startURL)
                     .textFieldStyle(.roundedBorder)
                 
                 if let validation = validateURL(startURL), !startURL.isEmpty {

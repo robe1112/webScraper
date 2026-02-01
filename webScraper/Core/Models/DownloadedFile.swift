@@ -106,7 +106,7 @@ struct DownloadedFile: Identifiable, Codable, Hashable {
     }
     
     /// Human-readable file size
-    var formattedSize: String {
+    nonisolated var formattedSize: String {
         ByteCountFormatter.string(fromByteCount: fileSize, countStyle: .file)
     }
     

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 /// Represents a mind map structure
-struct MindMap: Identifiable, Codable, Hashable {
+struct MindMap: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     var name: String
     var description: String?
@@ -19,7 +19,7 @@ struct MindMap: Identifiable, Codable, Hashable {
     var projectId: UUID?
     var style: MindMapStyle
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         name: String,
         description: String? = nil,
@@ -51,7 +51,7 @@ struct MindMap: Identifiable, Codable, Hashable {
 }
 
 /// A single node in the mind map
-struct MindMapNode: Identifiable, Codable, Hashable {
+struct MindMapNode: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     var text: String
     var notes: String?
@@ -63,7 +63,7 @@ struct MindMapNode: Identifiable, Codable, Hashable {
     var links: [NodeLink]
     var metadata: [String: String]
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         text: String,
         notes: String? = nil,
@@ -110,7 +110,7 @@ struct MindMapNode: Identifiable, Codable, Hashable {
 }
 
 /// Types of mind map nodes
-enum NodeType: String, Codable, CaseIterable {
+enum NodeType: String, Codable, CaseIterable, Sendable {
     case root = "Root"
     case topic = "Topic"
     case subtopic = "Subtopic"
@@ -139,7 +139,7 @@ enum NodeType: String, Codable, CaseIterable {
 }
 
 /// Node color options
-enum NodeColor: String, Codable, CaseIterable {
+enum NodeColor: String, Codable, CaseIterable, Sendable {
     case red, orange, yellow, green, blue, purple, pink, gray
     
     var color: Color {
@@ -157,21 +157,21 @@ enum NodeColor: String, Codable, CaseIterable {
 }
 
 /// Link to external resource or another node
-struct NodeLink: Identifiable, Codable, Hashable {
+struct NodeLink: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     var title: String
     var url: String?
     var linkedNodeId: UUID?
     var linkType: LinkType
     
-    enum LinkType: String, Codable {
+    enum LinkType: String, Codable, Sendable {
         case url = "URL"
         case document = "Document"
         case node = "Node"
         case file = "File"
     }
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         title: String,
         url: String? = nil,
@@ -187,7 +187,7 @@ struct NodeLink: Identifiable, Codable, Hashable {
 }
 
 /// Visual style for mind maps
-struct MindMapStyle: Codable, Hashable {
+struct MindMapStyle: Codable, Hashable, Sendable {
     var layout: LayoutStyle
     var colorScheme: ColorScheme
     var nodeShape: NodeShape
@@ -242,7 +242,7 @@ struct MindMapStyle: Codable, Hashable {
         case spacious = "Spacious"
     }
     
-    static let `default` = MindMapStyle(
+    nonisolated(unsafe) static let `default` = MindMapStyle(
         layout: .radial,
         colorScheme: .automatic,
         nodeShape: .roundedRect,

@@ -9,6 +9,7 @@ import Foundation
 
 /// Parses HTML content and extracts elements using CSS selectors
 /// Provides a simple API similar to SwiftSoup
+/// All members are nonisolated so it can be used from CrawlerEngine (non-MainActor actor)
 final class HTMLParser {
     
     // MARK: - Types
@@ -64,14 +65,14 @@ final class HTMLParser {
     
     // MARK: - Initialization
     
-    init(html: String) {
+    nonisolated init(html: String) {
         self.html = html
     }
     
     // MARK: - Parsing
     
     /// Parse the document and extract all elements
-    func parse() -> ParsedDocument {
+    nonisolated func parse() -> ParsedDocument {
         ParsedDocument(
             html: html,
             title: extractTitle(),

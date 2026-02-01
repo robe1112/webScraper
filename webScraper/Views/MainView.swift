@@ -35,6 +35,7 @@ struct MainView: View {
                 Button(action: { showNewProjectSheet = true }) {
                     Label("New Project", systemImage: "plus")
                 }
+                .accessibilityIdentifier("newProjectButton")
                 
                 Button(action: {}) {
                     Label("Start Scrape", systemImage: "play.fill")
@@ -56,6 +57,7 @@ struct MainView: View {
         }
         .sheet(isPresented: $showNewProjectSheet) {
             NewProjectView(isPresented: $showNewProjectSheet)
+                .environmentObject(appState)
         }
         .alert(item: $appState.currentError) { error in
             Alert(
@@ -197,7 +199,7 @@ struct ProjectListView: View {
                 )
             }
         }
-        .task {
+        .task(id: appState.projectListRefreshTrigger) {
             do {
                 projects = try await appState.loadProjects()
             } catch {
@@ -388,10 +390,12 @@ struct NewProjectView: View {
             Form {
                 Section("Project Details") {
                     TextField("Project Name", text: $projectName)
-                    
+                        .accessibilityIdentifier("projectNameField")
+
                     TextField("Start URL", text: $startURL)
                         .textContentType(.URL)
                         .autocorrectionDisabled()
+                        .accessibilityIdentifier("startURLField")
                         .onChange(of: startURL) { _, newValue in
                             validationResult = URLValidator.validate(newValue)
                         }
@@ -429,6 +433,7 @@ struct NewProjectView: View {
                     Button("Cancel") {
                         isPresented = false
                     }
+                    .accessibilityIdentifier("cancelButton")
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -436,6 +441,7 @@ struct NewProjectView: View {
                         createProject()
                     }
                     .disabled(!canCreate)
+                    .accessibilityIdentifier("createButton")
                 }
             }
         }

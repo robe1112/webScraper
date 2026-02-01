@@ -24,7 +24,7 @@ struct MindMapGenerationOptions {
         case relevance
     }
     
-    static let `default` = MindMapGenerationOptions(
+    nonisolated(unsafe) static let `default` = MindMapGenerationOptions(
         maxDepth: 5,
         maxNodesPerLevel: 10,
         includeMetadata: true,

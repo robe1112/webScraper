@@ -224,6 +224,12 @@ actor HTMLFetcher {
     
     private func performFetch(url: URL) async throws -> FetchResult {
         let startTime = Date()
+
+        // Handle file:// URLs directly - URLSession returns non-HTTP response for file protocol
+        if url.isFileURL {
+            return try await fetchFileURL(url, startTime: startTime)
+        }
+
         var redirectChain: [URL] = []
         var currentURL = url
         var redirectCount = 0
@@ -333,6 +339,49 @@ actor HTMLFetcher {
             contentLength: contentLength,
             responseTime: responseTime,
             redirectChain: redirectChain
+        )
+    }
+    
+    private func fetchFileURL(_ url: URL, startTime: Date) async throws -> FetchResult {
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            throw FetchError.networkError(error)
+        }
+        
+        let responseTime = Date().timeIntervalSince(startTime)
+        let contentLength = Int64(data.count)
+        
+        // Detect content type from extension
+        let ext = url.pathExtension.lowercased()
+        let contentType: String?
+        switch ext {
+        case "html", "htm": contentType = "text/html; charset=utf-8"
+        case "xml": contentType = "application/xml"
+        case "xhtml": contentType = "application/xhtml+xml"
+        default: contentType = "application/octet-stream"
+        }
+        
+        var htmlContent: String?
+        if contentType?.contains("text") == true || contentType?.contains("html") == true || contentType?.contains("xml") == true {
+            htmlContent = String(data: data, encoding: .utf8)
+            if htmlContent == nil {
+                htmlContent = String(data: data, encoding: .isoLatin1)
+            }
+        }
+        
+        return FetchResult(
+            url: url,
+            finalURL: url,
+            statusCode: 200,
+            headers: [:],
+            data: data,
+            htmlContent: htmlContent,
+            contentType: contentType,
+            contentLength: contentLength,
+            responseTime: responseTime,
+            redirectChain: []
         )
     }
     

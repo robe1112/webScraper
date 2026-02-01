@@ -209,8 +209,8 @@ actor CrawlerEngine {
             jsRenderer = newRenderer
         }
         
-        // Check robots.txt
-        if configuration.respectRobotsTxt {
+        // Check robots.txt (skip for file:// URLs - no robots.txt for local files)
+        if configuration.respectRobotsTxt, !url.isFileURL {
             progress.status = .initializing
             let isAllowed = await robotsParser.isAllowed(url)
             if !isAllowed {
@@ -279,8 +279,8 @@ actor CrawlerEngine {
             }
             visitedURLs.insert(normalizedURL)
             
-            // Check robots.txt
-            if configuration.respectRobotsTxt {
+            // Check robots.txt (skip for file:// URLs)
+            if configuration.respectRobotsTxt, !queuedURL.url.isFileURL {
                 let isAllowed = await robotsParser.isAllowed(queuedURL.url)
                 if !isAllowed {
                     continue
@@ -564,9 +564,4 @@ enum CrawlerError: LocalizedError {
             return "All requests failed"
         }
     }
-}
-
-// Add missing LinkType case
-extension LinkType {
-    static var other: LinkType { .javascript }  // Fallback
 }

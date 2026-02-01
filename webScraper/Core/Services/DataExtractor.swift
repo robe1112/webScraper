@@ -9,6 +9,7 @@ import Foundation
 
 /// Extracts data from HTML using extraction rules
 /// Supports CSS selectors, regex, and meta tag extraction
+/// All members are nonisolated so it can be used from CrawlerEngine (non-MainActor actor)
 final class DataExtractor {
     
     // MARK: - Types
@@ -27,18 +28,18 @@ final class DataExtractor {
     
     // MARK: - Initialization
     
-    init(html: String) {
+    nonisolated init(html: String) {
         self.parser = HTMLParser(html: html)
     }
     
-    init(parser: HTMLParser) {
+    nonisolated init(parser: HTMLParser) {
         self.parser = parser
     }
     
     // MARK: - Extraction
     
     /// Extract data using a single rule
-    func extract(rule: ExtractionRule) -> ExtractionResult {
+    nonisolated func extract(rule: ExtractionRule) -> ExtractionResult {
         guard rule.isEnabled else {
             return ExtractionResult(
                 ruleId: rule.id,
@@ -107,7 +108,7 @@ final class DataExtractor {
     }
     
     /// Extract data using multiple rules
-    func extract(rules: [ExtractionRule]) -> [String: ExtractedValue] {
+    nonisolated func extract(rules: [ExtractionRule]) -> [String: ExtractedValue] {
         var results: [String: ExtractedValue] = [:]
         
         for rule in rules {
@@ -126,7 +127,7 @@ final class DataExtractor {
     }
     
     /// Extract all common elements (title, meta, links, etc.)
-    func extractCommon() -> [String: ExtractedValue] {
+    nonisolated func extractCommon() -> [String: ExtractedValue] {
         let document = parser.parse()
         var results: [String: ExtractedValue] = [:]
         

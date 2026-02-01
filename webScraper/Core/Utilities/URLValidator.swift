@@ -8,12 +8,13 @@
 import Foundation
 
 /// Validates and normalizes URLs for scraping
-struct URLValidator {
+/// All methods are nonisolated so they can be called from any actor context (e.g. CrawlerEngine)
+struct URLValidator: Sendable {
     
     // MARK: - Validation
     
     /// Validate a URL string
-    static func validate(_ urlString: String) -> ValidationResult {
+    nonisolated static func validate(_ urlString: String) -> ValidationResult {
         // Check for empty string
         guard !urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return .invalid(reason: "URL cannot be empty")
@@ -26,15 +27,23 @@ struct URLValidator {
         
         // Check for scheme
         guard let scheme = url.scheme?.lowercased() else {
-            return .invalid(reason: "URL must include a scheme (http:// or https://)")
+            return .invalid(reason: "URL must include a scheme (http://, https://, or file://)")
         }
         
-        // Only allow http and https
-        guard scheme == "http" || scheme == "https" else {
-            return .invalid(reason: "Only HTTP and HTTPS URLs are supported")
+        // Allow http, https, and file
+        guard scheme == "http" || scheme == "https" || scheme == "file" else {
+            return .invalid(reason: "Only HTTP, HTTPS, and file:// URLs are supported")
         }
         
-        // Check for host
+        if scheme == "file" {
+            // file:// URLs need a valid path
+            guard url.path.isEmpty == false else {
+                return .invalid(reason: "File URL must include a path")
+            }
+            return .warning(url: url, message: "Local file - useful for testing with the TestSite")
+        }
+        
+        // Check for host (http/https only)
         guard let host = url.host, !host.isEmpty else {
             return .invalid(reason: "URL must include a host")
         }
@@ -48,17 +57,32 @@ struct URLValidator {
     }
     
     /// Check if a URL is valid for scraping
-    static func isValidForScraping(_ url: URL) -> Bool {
+    nonisolated static func isValidForScraping(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.lowercased() else { return false }
+        if scheme == "file" {
+            return !url.path.isEmpty
+        }
         guard scheme == "http" || scheme == "https" else { return false }
-        guard url.host != nil else { return false }
-        return true
+        return url.host != nil
     }
     
     // MARK: - Normalization
     
     /// Normalize a URL for comparison and deduplication
-    static func normalize(_ url: URL) -> String {
+    nonisolated static func normalize(_ url: URL) -> String {
+        guard let scheme = url.scheme?.lowercased() else {
+            return url.absoluteString
+        }
+        
+        // file:// URLs: normalize path (resolve symlinks, remove trailing slash)
+        if scheme == "file" {
+            var path = url.standardized.path
+            if path.hasSuffix("/") && path != "/" {
+                path = String(path.dropLast())
+            }
+            return URL(fileURLWithPath: path).absoluteString
+        }
+        
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
             return url.absoluteString
         }
@@ -103,19 +127,25 @@ struct URLValidator {
     }
     
     /// Resolve a relative URL against a base URL
-    static func resolve(_ relative: String, against base: URL) -> URL? {
+    nonisolated static func resolve(_ relative: String, against base: URL) -> URL? {
         // Handle absolute URLs
-        if relative.hasPrefix("http://") || relative.hasPrefix("https://") {
+        if relative.hasPrefix("http://") || relative.hasPrefix("https://") || relative.hasPrefix("file://") {
             return URL(string: relative)
         }
         
-        // Handle protocol-relative URLs
-        if relative.hasPrefix("//") {
+        // Handle protocol-relative URLs (not applicable to file://)
+        if relative.hasPrefix("//") && base.scheme != "file" {
             return URL(string: (base.scheme ?? "https") + ":" + relative)
         }
         
         // Handle root-relative URLs
         if relative.hasPrefix("/") {
+            if base.isFileURL {
+                let baseDir = base.deletingLastPathComponent()
+                let relativePath = String(relative.dropFirst())
+                let resolvedPath = (baseDir.path as NSString).appendingPathComponent(relativePath)
+                return URL(fileURLWithPath: resolvedPath).standardized
+            }
             var components = URLComponents(url: base, resolvingAgainstBaseURL: true)
             components?.path = relative
             components?.query = nil
@@ -130,37 +160,37 @@ struct URLValidator {
     // MARK: - Domain Extraction
     
     /// Extract the domain from a URL
-    static func extractDomain(_ url: URL) -> String? {
+    nonisolated static func extractDomain(_ url: URL) -> String? {
         url.host?.lowercased()
     }
     
     /// Extract the base domain (e.g., "example.com" from "www.subdomain.example.com")
-    static func extractBaseDomain(_ url: URL) -> String? {
+    /// For file:// URLs, returns the base directory path for "same origin" comparison
+    nonisolated static func extractBaseDomain(_ url: URL) -> String? {
+        if url.isFileURL {
+            return url.deletingLastPathComponent().path
+        }
         guard let host = url.host?.lowercased() else { return nil }
-        
         let parts = host.split(separator: ".")
         guard parts.count >= 2 else { return host }
-        
-        // Simple heuristic: take last 2 parts for most TLDs
-        // This doesn't handle all cases (e.g., .co.uk) but works for common cases
         let baseParts = parts.suffix(2)
         return baseParts.joined(separator: ".")
     }
     
     /// Check if two URLs are from the same domain
-    static func isSameDomain(_ url1: URL, _ url2: URL) -> Bool {
+    nonisolated static func isSameDomain(_ url1: URL, _ url2: URL) -> Bool {
         extractDomain(url1) == extractDomain(url2)
     }
     
     /// Check if two URLs are from the same base domain
-    static func isSameBaseDomain(_ url1: URL, _ url2: URL) -> Bool {
+    nonisolated static func isSameBaseDomain(_ url1: URL, _ url2: URL) -> Bool {
         extractBaseDomain(url1) == extractBaseDomain(url2)
     }
     
     // MARK: - URL Classification
     
     /// Determine the type of content a URL likely points to
-    static func classifyURL(_ url: URL) -> URLType {
+    nonisolated static func classifyURL(_ url: URL) -> URLType {
         let path = url.path.lowercased()
         let ext = url.pathExtension.lowercased()
         
@@ -193,7 +223,7 @@ struct URLValidator {
     
     // MARK: - Private Methods
     
-    private static func isLocalAddress(_ host: String) -> Bool {
+    private nonisolated static func isLocalAddress(_ host: String) -> Bool {
         let localPatterns = [
             "localhost",
             "127.0.0.1",

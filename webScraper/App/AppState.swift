@@ -29,6 +29,9 @@ final class AppState: ObservableObject {
     
     /// Navigation state
     @Published var selectedSidebarItem: SidebarItem = .projects
+
+    /// Trigger to refresh project list (e.g. after creating a project)
+    @Published var projectListRefreshTrigger = UUID()
     
     /// Active downloads count
     @Published var activeDownloads: Int = 0
@@ -92,7 +95,8 @@ final class AppState: ObservableObject {
         
         try await storageProvider.save(project)
         selectedProject = project
-        
+        projectListRefreshTrigger = UUID()
+
         return project
     }
     

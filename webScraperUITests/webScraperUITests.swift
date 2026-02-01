@@ -24,11 +24,62 @@ final class webScraperUITests: XCTestCase {
 
     @MainActor
     func testExample() throws {
-        // UI tests must launch the application that they test.
+        let app = XCUIApplication()
+        app.launch()
+    }
+
+    @MainActor
+    func testNewProjectWindowFlow() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        XCTAssertTrue(newProjectButton.waitForExistence(timeout: 5))
+        newProjectButton.tap()
+
+        let createButton = app.buttons["createButton"].firstMatch
+        XCTAssertTrue(createButton.waitForExistence(timeout: 2))
+        XCTAssertFalse(createButton.isEnabled, "Create should be disabled with empty form")
+
+        let nameField = app.textFields["projectNameField"].firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+        nameField.tap()
+        nameField.typeText("UI Test Project")
+
+        let urlField = app.textFields["startURLField"].firstMatch
+        XCTAssertTrue(urlField.waitForExistence(timeout: 2))
+        urlField.tap()
+        urlField.typeText("https://example.com")
+
+        XCTAssertTrue(createButton.waitForExistence(timeout: 2))
+        if createButton.isEnabled {
+            createButton.tap()
+        } else {
+            XCTFail("Create button should be enabled after entering valid name and URL")
+        }
+
+        // Sheet should dismiss (newProjectButton visible again)
+        XCTAssertTrue(newProjectButton.waitForExistence(timeout: 3))
+
+        // Verify no error alert appeared (create succeeded)
+        let errorAlert = app.alerts["Create Failed"]
+        XCTAssertFalse(errorAlert.exists, "Create should succeed without error")
+    }
+
+    @MainActor
+    func testNewProjectCancelDismissesSheet() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let newProjectButton = app.buttons["newProjectButton"].firstMatch
+        XCTAssertTrue(newProjectButton.waitForExistence(timeout: 5))
+        newProjectButton.tap()
+
+        let cancelButton = app.buttons["cancelButton"].firstMatch
+        XCTAssertTrue(cancelButton.waitForExistence(timeout: 2))
+        cancelButton.tap()
+
+        XCTAssertTrue(newProjectButton.waitForExistence(timeout: 2))
     }
 
     @MainActor

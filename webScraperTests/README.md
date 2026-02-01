@@ -4,6 +4,7 @@ Automated tests following `.cursor/rules/testing` guidelines.
 
 ## Structure
 
+- **Core/NewProjectTests.swift** – New Project flow (createProject, validation)
 - **Core/URLValidatorTests.swift** – URL validation, normalization, domain extraction, classification
 - **Core/SiteNodeTests.swift** – SiteNode.normalizeURL, NodeFileType.detect
 - **Core/SiteMapBuilderTests.swift** – SiteMapBuilder actor (add nodes, stats, export)
@@ -35,8 +36,14 @@ Fixtures are embedded in `TestSiteFixtures.swift` for reliable loading. The HTML
 
 ## Running Tests
 
+**Unit tests:**
 ```bash
 xcodebuild -scheme webScraper -destination 'platform=macOS' -only-testing:webScraperTests test
+```
+
+**UI tests (New Project window):**
+```bash
+xcodebuild -scheme webScraper -destination 'platform=macOS' -only-testing:webScraperUITests test
 ```
 
 Or use ⌘U in Xcode.

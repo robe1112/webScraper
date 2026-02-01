@@ -140,8 +140,8 @@ struct URLValidatorTests {
         #expect(result == true)
     }
 
-    @Test("File URL returns false for scraping")
-    func fileURLNotValidForScraping() throws {
+    @Test("File URL returns true for scraping")
+    func fileURLValidForScraping() throws {
         // Arrange
         let url = URL(string: "file:///tmp/test.html")!
 
@@ -149,7 +149,36 @@ struct URLValidatorTests {
         let result = URLValidator.isValidForScraping(url)
 
         // Assert
-        #expect(result == false)
+        #expect(result == true)
+    }
+
+    @Test("File URL resolve relative path against file base")
+    func fileURLResolveRelative() throws {
+        // Arrange - base is file URL, relative path
+        let base = URL(fileURLWithPath: "/path/to/TestSite/index.html")
+        let relative = "about.html"
+
+        // Act
+        let resolved = URLValidator.resolve(relative, against: base)
+
+        // Assert
+        #expect(resolved != nil)
+        #expect(resolved?.path.contains("about.html") == true)
+    }
+
+    @Test("File URL validation returns valid with warning")
+    func fileURLValidation() throws {
+        // Arrange
+        let urlString = "file:///Users/test/TestSite/index.html"
+
+        // Act
+        let result = URLValidator.validate(urlString)
+
+        // Assert
+        #expect(result.isValid == true)
+        if case .warning(_, let message) = result {
+            #expect(message.contains("file") || message.contains("Local"))
+        }
     }
 
     // MARK: - Normalization Tests
