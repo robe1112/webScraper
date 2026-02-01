@@ -1,0 +1,9 @@
+Test Site - Sample Text File
+
+This is a plain text file for testing web scraper file download functionality.
+It contains multiple lines of sample content.
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+End of sample file.

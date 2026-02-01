@@ -1,0 +1,7 @@
+{
+  "items": [
+    {"id": 1, "name": "API Item 1", "value": 100},
+    {"id": 2, "name": "API Item 2", "value": 200}
+  ],
+  "total": 2
+}

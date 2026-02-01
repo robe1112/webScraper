@@ -1,0 +1,8 @@
+{
+  "title": "Test Site Sample Data",
+  "version": "1.0",
+  "items": [
+    {"id": 1, "name": "Item One", "active": true},
+    {"id": 2, "name": "Item Two", "active": false}
+  ]
+}
