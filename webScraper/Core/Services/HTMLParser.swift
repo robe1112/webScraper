@@ -86,7 +86,7 @@ final class HTMLParser {
     }
     
     /// Extract title from the document
-    func extractTitle() -> String? {
+    nonisolated func extractTitle() -> String? {
         if let match = html.range(of: "<title[^>]*>(.*?)</title>", options: [.regularExpression, .caseInsensitive]) {
             let titleTag = String(html[match])
             return extractTagContent(from: titleTag)?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -95,7 +95,7 @@ final class HTMLParser {
     }
     
     /// Extract all meta tags
-    func extractMetaTags() -> [MetaTag] {
+    nonisolated func extractMetaTags() -> [MetaTag] {
         var tags: [MetaTag] = []
         let pattern = "<meta\\s+[^>]*>"
         
@@ -120,7 +120,7 @@ final class HTMLParser {
     }
     
     /// Extract all links
-    func extractLinks() -> [ParsedLink] {
+    nonisolated func extractLinks() -> [ParsedLink] {
         var links: [ParsedLink] = []
         let pattern = "<a\\s+[^>]*href\\s*=\\s*[\"']([^\"']*)[\"'][^>]*>(.*?)</a>"
         
@@ -155,7 +155,7 @@ final class HTMLParser {
     }
     
     /// Extract all images
-    func extractImages() -> [ParsedImage] {
+    nonisolated func extractImages() -> [ParsedImage] {
         var images: [ParsedImage] = []
         let pattern = "<img\\s+[^>]*>"
         
@@ -184,7 +184,7 @@ final class HTMLParser {
     }
     
     /// Extract all scripts
-    func extractScripts() -> [ParsedScript] {
+    nonisolated func extractScripts() -> [ParsedScript] {
         var scripts: [ParsedScript] = []
         let pattern = "<script\\s*[^>]*>(.*?)</script>"
         
@@ -215,7 +215,7 @@ final class HTMLParser {
     }
     
     /// Extract all stylesheets
-    func extractStylesheets() -> [ParsedStylesheet] {
+    nonisolated func extractStylesheets() -> [ParsedStylesheet] {
         var stylesheets: [ParsedStylesheet] = []
         let pattern = "<link\\s+[^>]*rel\\s*=\\s*[\"']stylesheet[\"'][^>]*>"
         
@@ -241,7 +241,7 @@ final class HTMLParser {
     }
     
     /// Extract text content (strip all HTML tags)
-    func extractTextContent() -> String {
+    nonisolated func extractTextContent() -> String {
         stripHTML(html)
             .components(separatedBy: .whitespacesAndNewlines)
             .filter { !$0.isEmpty }
@@ -251,7 +251,7 @@ final class HTMLParser {
     // MARK: - CSS Selector Queries
     
     /// Select elements using a CSS selector (simplified implementation)
-    func select(_ selector: String) -> [String] {
+    nonisolated func select(_ selector: String) -> [String] {
         var results: [String] = []
         
         // Handle simple selectors
@@ -275,38 +275,38 @@ final class HTMLParser {
     }
     
     /// Get text from elements matching selector
-    func selectText(_ selector: String) -> [String] {
+    nonisolated func selectText(_ selector: String) -> [String] {
         select(selector).map { stripHTML($0).trimmingCharacters(in: .whitespacesAndNewlines) }
     }
     
     /// Get first element matching selector
-    func selectFirst(_ selector: String) -> String? {
+    nonisolated func selectFirst(_ selector: String) -> String? {
         select(selector).first
     }
     
     /// Get attribute value from elements matching selector
-    func selectAttribute(_ selector: String, attribute: String) -> [String] {
+    nonisolated func selectAttribute(_ selector: String, attribute: String) -> [String] {
         select(selector).compactMap { extractAttribute(named: attribute, from: $0) }
     }
     
     // MARK: - Private Methods
     
-    private func selectById(_ id: String) -> [String] {
+    private nonisolated func selectById(_ id: String) -> [String] {
         let pattern = "<[^>]+id\\s*=\\s*[\"']\(NSRegularExpression.escapedPattern(for: id))[\"'][^>]*>.*?</[^>]+>"
         return matchPattern(pattern)
     }
     
-    private func selectByClass(_ className: String) -> [String] {
+    private nonisolated func selectByClass(_ className: String) -> [String] {
         let pattern = "<[^>]+class\\s*=\\s*[\"'][^\"']*\\b\(NSRegularExpression.escapedPattern(for: className))\\b[^\"']*[\"'][^>]*>.*?</[^>]+>"
         return matchPattern(pattern)
     }
     
-    private func selectByTag(_ tag: String) -> [String] {
+    private nonisolated func selectByTag(_ tag: String) -> [String] {
         let pattern = "<\(NSRegularExpression.escapedPattern(for: tag))[^>]*>.*?</\(NSRegularExpression.escapedPattern(for: tag))>"
         return matchPattern(pattern)
     }
     
-    private func selectByAttribute(_ selector: String) -> [String] {
+    private nonisolated func selectByAttribute(_ selector: String) -> [String] {
         // Parse selector like "a[href]" or "a[href='value']"
         let pattern = "([a-zA-Z0-9]+)\\[([a-zA-Z0-9-]+)(?:=['\"]?([^'\"\\]]*)['\"]?)?\\]"
         
@@ -330,7 +330,7 @@ final class HTMLParser {
         return matchPattern(htmlPattern)
     }
     
-    private func matchPattern(_ pattern: String) -> [String] {
+    private nonisolated func matchPattern(_ pattern: String) -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
             return []
         }
@@ -344,7 +344,7 @@ final class HTMLParser {
         }
     }
     
-    private func extractAttribute(named name: String, from tag: String) -> String? {
+    private nonisolated func extractAttribute(named name: String, from tag: String) -> String? {
         let pattern = "\(name)\\s*=\\s*[\"']([^\"']*)[\"']"
         
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
@@ -357,7 +357,7 @@ final class HTMLParser {
         return String(tag[valueRange])
     }
     
-    private func extractTagContent(from tag: String) -> String? {
+    private nonisolated func extractTagContent(from tag: String) -> String? {
         let pattern = ">([^<]*)<"
         
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators),
@@ -370,7 +370,7 @@ final class HTMLParser {
         return String(tag[contentRange])
     }
     
-    private func stripHTML(_ html: String) -> String {
+    private nonisolated func stripHTML(_ html: String) -> String {
         var text = html
         
         // Remove script and style contents
@@ -389,7 +389,7 @@ final class HTMLParser {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
-    private func decodeHTMLEntities(_ string: String) -> String {
+    private nonisolated func decodeHTMLEntities(_ string: String) -> String {
         var result = string
         
         let entities: [String: String] = [

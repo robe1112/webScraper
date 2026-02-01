@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import CoreData
+@preconcurrency import CoreData
 
 /// Core Data implementation of StorageProvider
 /// Best for complex queries and relationships
@@ -31,7 +31,8 @@ final class CoreDataStorage: StorageProvider {
     // MARK: - Initialization
     
     init(containerName: String = "webScraper") {
-        container = NSPersistentContainer(name: containerName)
+        let model = CoreDataStorage.makeManagedObjectModel()
+        container = NSPersistentContainer(name: containerName, managedObjectModel: model)
         
         container.loadPersistentStores { description, error in
             if let error = error {
@@ -44,12 +45,55 @@ final class CoreDataStorage: StorageProvider {
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
     
+    /// Creates the Core Data model programmatically (avoids needing a .xcdatamodeld file)
+    private static func makeManagedObjectModel() -> NSManagedObjectModel {
+        let model = NSManagedObjectModel()
+        
+        let entityNames = [
+            "ProjectEntity", "ScrapeJobEntity", "ScrapedPageEntity",
+            "DownloadedFileEntity", "SiteNodeEntity", "ExtractionRuleEntity"
+        ]
+        
+        for entityName in entityNames {
+            let entity = NSEntityDescription()
+            entity.name = entityName
+            entity.managedObjectClassName = "NSManagedObject"
+            
+            let idAttr = NSAttributeDescription()
+            idAttr.name = "id"
+            idAttr.attributeType = .stringAttributeType
+            idAttr.isOptional = false
+            
+            let jsonAttr = NSAttributeDescription()
+            jsonAttr.name = "jsonData"
+            jsonAttr.attributeType = .stringAttributeType
+            jsonAttr.isOptional = false
+            
+            let createdAttr = NSAttributeDescription()
+            createdAttr.name = "createdAt"
+            createdAttr.attributeType = .dateAttributeType
+            createdAttr.isOptional = false
+            createdAttr.defaultValue = Date()
+            
+            let updatedAttr = NSAttributeDescription()
+            updatedAttr.name = "updatedAt"
+            updatedAttr.attributeType = .dateAttributeType
+            updatedAttr.isOptional = false
+            updatedAttr.defaultValue = Date()
+            
+            entity.properties = [idAttr, jsonAttr, createdAttr, updatedAttr]
+            model.entities.append(entity)
+        }
+        
+        return model
+    }
+    
     // MARK: - StorageProvider Implementation
     
     func save<T: Codable & Identifiable>(_ item: T) async throws {
+        let entityName = self.entityName(for: T.self)
         try await context.perform {
             let data = try JSONEncoder().encode(item)
-            let entityName = self.entityName(for: T.self)
             
             // Check if item exists
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
@@ -58,6 +102,7 @@ final class CoreDataStorage: StorageProvider {
             let results = try self.context.fetch(fetchRequest)
             
             let entity: NSManagedObject
+            let now = Date()
             if let existing = results.first {
                 entity = existing
             } else {
@@ -65,37 +110,38 @@ final class CoreDataStorage: StorageProvider {
                     throw StorageError.unsupportedType
                 }
                 entity = NSManagedObject(entity: entityDescription, insertInto: self.context)
+                entity.setValue(now, forKey: "createdAt")
             }
             
             entity.setValue(String(data: data, encoding: .utf8), forKey: "jsonData")
             entity.setValue("\(item.id)", forKey: "id")
-            entity.setValue(Date(), forKey: "updatedAt")
+            entity.setValue(now, forKey: "updatedAt")
             
             try self.context.save()
         }
     }
     
     func fetch<T: Codable & Identifiable>(predicate: NSPredicate?) async throws -> [T] {
-        try await context.perform {
-            let entityName = self.entityName(for: T.self)
+        let entityName = self.entityName(for: T.self)
+        return try await context.perform {
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
             fetchRequest.predicate = predicate
             
             let results = try self.context.fetch(fetchRequest)
             
-            return try results.compactMap { entity -> T? in
+            var items: [T] = []
+            for entity in results {
                 guard let jsonString = entity.value(forKey: "jsonData") as? String,
-                      let data = jsonString.data(using: .utf8) else {
-                    return nil
-                }
-                return try JSONDecoder().decode(T.self, from: data)
+                      let data = jsonString.data(using: .utf8) else { continue }
+                items.append(try JSONDecoder().decode(T.self, from: data))
             }
+            return items
         }
     }
     
     func fetchById<T: Codable & Identifiable>(_ id: T.ID, type: T.Type) async throws -> T? {
-        try await context.perform {
-            let entityName = self.entityName(for: T.self)
+        let entityName = self.entityName(for: T.self)
+        return try await context.perform {
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
             fetchRequest.predicate = NSPredicate(format: "id == %@", "\(id)")
             fetchRequest.fetchLimit = 1
@@ -103,7 +149,7 @@ final class CoreDataStorage: StorageProvider {
             guard let entity = try self.context.fetch(fetchRequest).first,
                   let jsonString = entity.value(forKey: "jsonData") as? String,
                   let data = jsonString.data(using: .utf8) else {
-                return nil
+                return nil as T?
             }
             
             return try JSONDecoder().decode(T.self, from: data)
@@ -111,8 +157,8 @@ final class CoreDataStorage: StorageProvider {
     }
     
     func delete<T: Codable & Identifiable>(_ item: T) async throws {
+        let entityName = self.entityName(for: T.self)
         try await context.perform {
-            let entityName = self.entityName(for: T.self)
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
             fetchRequest.predicate = NSPredicate(format: "id == %@", "\(item.id)")
             
@@ -126,8 +172,8 @@ final class CoreDataStorage: StorageProvider {
     }
     
     func deleteWhere<T: Codable & Identifiable>(type: T.Type, predicate: NSPredicate) async throws {
+        let entityName = self.entityName(for: T.self)
         try await context.perform {
-            let entityName = self.entityName(for: T.self)
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
             fetchRequest.predicate = predicate
             
@@ -145,11 +191,10 @@ final class CoreDataStorage: StorageProvider {
     }
     
     func count<T: Codable & Identifiable>(type: T.Type, predicate: NSPredicate?) async throws -> Int {
-        try await context.perform {
-            let entityName = self.entityName(for: T.self)
+        let entityName = self.entityName(for: T.self)
+        return try await context.perform {
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
             fetchRequest.predicate = predicate
-            
             return try self.context.count(for: fetchRequest)
         }
     }
@@ -237,8 +282,10 @@ final class CoreDataStorage: StorageProvider {
                     }
                     
                     let entity = NSManagedObject(entity: entityDescription, insertInto: self.context)
+                    let now = Date()
                     entity.setValue(jsonString, forKey: "jsonData")
-                    entity.setValue(Date(), forKey: "updatedAt")
+                    entity.setValue(now, forKey: "createdAt")
+                    entity.setValue(now, forKey: "updatedAt")
                     
                     // Extract ID from JSON
                     if let jsonData = jsonString.data(using: .utf8),

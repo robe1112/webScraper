@@ -4,6 +4,7 @@ Automated tests following `.cursor/rules/testing` guidelines.
 
 ## Structure
 
+- **Core/GlobalSettingsTests.swift** – GlobalSettings persistence and defaults, FeatureFlags behavior
 - **Core/NewProjectTests.swift** – New Project flow (createProject, validation)
 - **Core/URLValidatorTests.swift** – URL validation, normalization, domain extraction, classification
 - **Core/SiteNodeTests.swift** – SiteNode.normalizeURL, NodeFileType.detect

@@ -346,16 +346,22 @@ struct IntelligencePackSettingsView: View {
             Section("Entity Extraction") {
                 Toggle("Auto-extract entities from documents", isOn: $enableEntityExtraction)
                 Toggle("Use LLM for complex entities", isOn: .constant(true))
+                    .disabled(true)
+                Text("LLM integration coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section("Knowledge Graph") {
                 Toggle("Auto-build graph from entities", isOn: .constant(true))
+                    .disabled(true)
                 Toggle("Enable relationship discovery", isOn: $enableRelationshipDiscovery)
             }
             
             Section("RAG Q&A") {
                 Toggle("Enable AI chat", isOn: $enableRAG)
                 Toggle("Include source citations", isOn: .constant(true))
+                    .disabled(true)
             }
         }
         .padding()

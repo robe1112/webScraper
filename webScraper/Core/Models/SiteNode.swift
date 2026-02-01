@@ -9,7 +9,7 @@ import Foundation
 
 /// Represents a node in the site map tree
 /// Used for visualizing website structure
-struct SiteNode: Identifiable, Codable, Hashable {
+struct SiteNode: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     let jobId: UUID
     let url: String
@@ -40,7 +40,7 @@ struct SiteNode: Identifiable, Codable, Hashable {
     var fetchedAt: Date?
     var lastCheckedAt: Date?
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         jobId: UUID,
         url: String,
@@ -83,7 +83,7 @@ struct SiteNode: Identifiable, Codable, Hashable {
     }
     
     /// Normalize URL for deduplication
-    static func normalizeURL(_ url: String) -> String {
+    nonisolated static func normalizeURL(_ url: String) -> String {
         guard var components = URLComponents(string: url) else { return url }
         
         // Remove fragment
@@ -138,7 +138,7 @@ enum NodeFileType: String, Codable, CaseIterable {
     }
     
     /// Determine file type from URL and content type
-    static func detect(url: String, contentType: String?) -> NodeFileType {
+    nonisolated static func detect(url: String, contentType: String?) -> NodeFileType {
         let lowercaseURL = url.lowercased()
         let ext = URL(string: lowercaseURL)?.pathExtension ?? ""
         

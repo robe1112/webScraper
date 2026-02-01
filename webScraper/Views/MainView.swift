@@ -14,7 +14,6 @@ struct MainView: View {
     @EnvironmentObject var featureFlags: FeatureFlags
     
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @State private var showNewProjectSheet = false
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -32,7 +31,7 @@ struct MainView: View {
         .navigationTitle("")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button(action: { showNewProjectSheet = true }) {
+                Button(action: { appState.showNewProjectSheet = true }) {
                     Label("New Project", systemImage: "plus")
                 }
                 .accessibilityIdentifier("newProjectButton")
@@ -55,8 +54,14 @@ struct MainView: View {
                 }
             }
         }
-        .sheet(isPresented: $showNewProjectSheet) {
-            NewProjectView(isPresented: $showNewProjectSheet)
+        .sheet(isPresented: Binding(
+            get: { appState.showNewProjectSheet },
+            set: { appState.showNewProjectSheet = $0 }
+        )) {
+            NewProjectView(isPresented: Binding(
+                get: { appState.showNewProjectSheet },
+                set: { appState.showNewProjectSheet = $0 }
+            ))
                 .environmentObject(appState)
         }
         .alert(item: $appState.currentError) { error in
@@ -382,8 +387,11 @@ struct NewProjectView: View {
     
     @State private var projectName = ""
     @State private var startURL = ""
-    @State private var isValidating = false
+    @State private var storageType: StorageType = .coreData
+    @State private var enableJavaScript = true
+    @State private var respectRobotsTxt = true
     @State private var validationResult: ValidationResult?
+    @State private var didLoadDefaults = false
     
     var body: some View {
         NavigationStack {
@@ -416,14 +424,13 @@ struct NewProjectView: View {
                 }
                 
                 Section("Quick Settings") {
-                    Picker("Storage Type", selection: .constant(StorageType.coreData)) {
+                    Picker("Storage Type", selection: $storageType) {
                         ForEach(StorageType.allCases, id: \.self) { type in
                             Text(type.rawValue).tag(type)
                         }
                     }
-                    
-                    Toggle("Enable JavaScript", isOn: .constant(true))
-                    Toggle("Respect robots.txt", isOn: .constant(true))
+                    Toggle("Enable JavaScript", isOn: $enableJavaScript)
+                    Toggle("Respect robots.txt", isOn: $respectRobotsTxt)
                 }
             }
             .formStyle(.grouped)
@@ -446,6 +453,19 @@ struct NewProjectView: View {
             }
         }
         .frame(width: 450, height: 350)
+        .onAppear {
+            if !didLoadDefaults {
+                loadDefaultsFromGlobalSettings()
+                didLoadDefaults = true
+            }
+        }
+    }
+    
+    private func loadDefaultsFromGlobalSettings() {
+        let settings = appState.globalSettings
+        storageType = settings.defaultStorageType
+        enableJavaScript = settings.defaultEnableJavaScript
+        respectRobotsTxt = settings.defaultRespectRobotsTxt
     }
     
     private var canCreate: Bool {
@@ -453,9 +473,22 @@ struct NewProjectView: View {
     }
     
     private func createProject() {
+        // Use normalized URL from validation when available (handles pasted paths like /Users/.../TestSite)
+        let urlToUse: String
+        if let result = validationResult, let url = result.url {
+            urlToUse = url.absoluteString
+        } else {
+            urlToUse = startURL
+        }
         Task {
             do {
-                _ = try await appState.createProject(name: projectName, url: startURL)
+                _ = try await appState.createProject(
+                    name: projectName,
+                    url: urlToUse,
+                    storageType: storageType,
+                    enableJavaScript: enableJavaScript,
+                    respectRobotsTxt: respectRobotsTxt
+                )
                 isPresented = false
             } catch {
                 appState.showError(AppError(

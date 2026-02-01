@@ -15,7 +15,8 @@ final class SQLiteStorage: StorageProvider {
     
     // MARK: - Properties
     
-    private var db: OpaquePointer?
+    /// SQLite handle - nonisolated(unsafe) to allow use from queue.async Sendable closures
+    private nonisolated(unsafe) var db: OpaquePointer?
     private let dbPath: String
     private let queue = DispatchQueue(label: "com.webScraper.sqlite", qos: .userInitiated)
     
@@ -78,6 +79,8 @@ final class SQLiteStorage: StorageProvider {
     // MARK: - StorageProvider Implementation
     
     func save<T: Codable & Identifiable>(_ item: T) async throws {
+        let tableName = self.tableName(for: T.self)
+        let dbPointer = db
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
                 do {
@@ -85,8 +88,6 @@ final class SQLiteStorage: StorageProvider {
                     guard let jsonString = String(data: data, encoding: .utf8) else {
                         throw StorageError.invalidData
                     }
-                    
-                    let tableName = self.tableName(for: T.self)
                     let now = Date().timeIntervalSince1970
                     
                     let sql = """
@@ -95,7 +96,7 @@ final class SQLiteStorage: StorageProvider {
                     """
                     
                     var statement: OpaquePointer?
-                    if sqlite3_prepare_v2(self.db, sql, -1, &statement, nil) == SQLITE_OK {
+                    if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
                         let idString = "\(item.id)"
                         sqlite3_bind_text(statement, 1, idString, -1, nil)
                         sqlite3_bind_text(statement, 2, jsonString, -1, nil)
@@ -119,52 +120,40 @@ final class SQLiteStorage: StorageProvider {
     }
     
     func fetch<T: Codable & Identifiable>(predicate: NSPredicate?) async throws -> [T] {
-        try await withCheckedThrowingContinuation { continuation in
+        let tableName = self.tableName(for: T.self)
+        let whereClause = predicate.map { " WHERE \(self.predicateToSQL($0))" } ?? ""
+        let sql = "SELECT json_data FROM \(tableName)\(whereClause)"
+        let dbPointer = db
+        return try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                do {
-                    let tableName = self.tableName(for: T.self)
-                    var sql = "SELECT json_data FROM \(tableName)"
-                    
-                    // Note: NSPredicate to SQL conversion is simplified
-                    // In production, you'd want more robust predicate handling
-                    if let predicate = predicate {
-                        sql += " WHERE \(self.predicateToSQL(predicate))"
-                    }
-                    
-                    var statement: OpaquePointer?
-                    var results: [T] = []
-                    
-                    if sqlite3_prepare_v2(self.db, sql, -1, &statement, nil) == SQLITE_OK {
-                        while sqlite3_step(statement) == SQLITE_ROW {
-                            if let jsonText = sqlite3_column_text(statement, 0) {
-                                let jsonString = String(cString: jsonText)
-                                if let data = jsonString.data(using: .utf8),
-                                   let item = try? JSONDecoder().decode(T.self, from: data) {
-                                    results.append(item)
-                                }
+                var statement: OpaquePointer?
+                var results: [T] = []
+                if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
+                    while sqlite3_step(statement) == SQLITE_ROW {
+                        if let jsonText = sqlite3_column_text(statement, 0) {
+                            let jsonString = String(cString: jsonText)
+                            if let data = jsonString.data(using: .utf8),
+                               let item = try? JSONDecoder().decode(T.self, from: data) {
+                                results.append(item)
                             }
                         }
                     }
-                    sqlite3_finalize(statement)
-                    
-                    continuation.resume(returning: results)
-                } catch {
-                    continuation.resume(throwing: error)
                 }
+                sqlite3_finalize(statement)
+                continuation.resume(returning: results)
             }
         }
     }
     
     func fetchById<T: Codable & Identifiable>(_ id: T.ID, type: T.Type) async throws -> T? {
-        try await withCheckedThrowingContinuation { continuation in
+        let tableName = self.tableName(for: T.self)
+        let sql = "SELECT json_data FROM \(tableName) WHERE id = ?"
+        let dbPointer = db
+        return try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                let tableName = self.tableName(for: T.self)
-                let sql = "SELECT json_data FROM \(tableName) WHERE id = ?"
-                
                 var statement: OpaquePointer?
                 var result: T?
-                
-                if sqlite3_prepare_v2(self.db, sql, -1, &statement, nil) == SQLITE_OK {
+                if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
                     sqlite3_bind_text(statement, 1, "\(id)", -1, nil)
                     
                     if sqlite3_step(statement) == SQLITE_ROW {
@@ -184,13 +173,13 @@ final class SQLiteStorage: StorageProvider {
     }
     
     func delete<T: Codable & Identifiable>(_ item: T) async throws {
+        let tableName = self.tableName(for: T.self)
+        let sql = "DELETE FROM \(tableName) WHERE id = ?"
+        let dbPointer = db
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
-                let tableName = self.tableName(for: T.self)
-                let sql = "DELETE FROM \(tableName) WHERE id = ?"
-                
                 var statement: OpaquePointer?
-                if sqlite3_prepare_v2(self.db, sql, -1, &statement, nil) == SQLITE_OK {
+                if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
                     sqlite3_bind_text(statement, 1, "\(item.id)", -1, nil)
                     
                     if sqlite3_step(statement) != SQLITE_DONE {
@@ -207,12 +196,17 @@ final class SQLiteStorage: StorageProvider {
     }
     
     func deleteWhere<T: Codable & Identifiable>(type: T.Type, predicate: NSPredicate) async throws {
+        let tableName = self.tableName(for: T.self)
+        let whereSQL = self.predicateToSQL(predicate)
+        let sql = "DELETE FROM \(tableName) WHERE \(whereSQL)"
+        let dbPointer = db
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
-                let tableName = self.tableName(for: T.self)
-                let sql = "DELETE FROM \(tableName) WHERE \(self.predicateToSQL(predicate))"
-                
-                self.executeSQL(sql)
+                var statement: OpaquePointer?
+                if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
+                    sqlite3_step(statement)
+                }
+                sqlite3_finalize(statement)
                 continuation.resume()
             }
         }
@@ -223,25 +217,20 @@ final class SQLiteStorage: StorageProvider {
     }
     
     func count<T: Codable & Identifiable>(type: T.Type, predicate: NSPredicate?) async throws -> Int {
-        try await withCheckedThrowingContinuation { continuation in
+        let tableName = self.tableName(for: T.self)
+        let whereClause = predicate.map { " WHERE \(self.predicateToSQL($0))" } ?? ""
+        let sql = "SELECT COUNT(*) FROM \(tableName)\(whereClause)"
+        let dbPointer = db
+        return try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                let tableName = self.tableName(for: T.self)
-                var sql = "SELECT COUNT(*) FROM \(tableName)"
-                
-                if let predicate = predicate {
-                    sql += " WHERE \(self.predicateToSQL(predicate))"
-                }
-                
                 var statement: OpaquePointer?
                 var count = 0
-                
-                if sqlite3_prepare_v2(self.db, sql, -1, &statement, nil) == SQLITE_OK {
+                if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
                     if sqlite3_step(statement) == SQLITE_ROW {
                         count = Int(sqlite3_column_int(statement, 0))
                     }
                 }
                 sqlite3_finalize(statement)
-                
                 continuation.resume(returning: count)
             }
         }
@@ -266,10 +255,17 @@ final class SQLiteStorage: StorageProvider {
     }
     
     func clearAll() async throws {
+        let tableNamesToClear = tableNames.values.map { $0 }
+        let dbPointer = db
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
-                for tableName in self.tableNames.values {
-                    self.executeSQL("DELETE FROM \(tableName)")
+                for tableName in tableNamesToClear {
+                    var statement: OpaquePointer?
+                    let sql = "DELETE FROM \(tableName)"
+                    if sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK {
+                        sqlite3_step(statement)
+                    }
+                    sqlite3_finalize(statement)
                 }
                 continuation.resume()
             }
@@ -302,7 +298,7 @@ final class SQLiteStorage: StorageProvider {
         let predicateString = predicate.predicateFormat
         
         // Convert NSPredicate format to SQL
-        var sql = predicateString
+        let sql = predicateString
             .replacingOccurrences(of: "==", with: "=")
             .replacingOccurrences(of: "CONTAINS", with: "LIKE")
             .replacingOccurrences(of: "BEGINSWITH", with: "LIKE")

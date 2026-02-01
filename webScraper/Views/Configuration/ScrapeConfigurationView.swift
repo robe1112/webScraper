@@ -148,8 +148,14 @@ struct ScrapeConfigurationView: View {
             
             Section("Organization") {
                 Toggle("Organize by file type", isOn: .constant(true))
+                    .disabled(true)
                 Toggle("Organize by date", isOn: .constant(false))
+                    .disabled(true)
                 Toggle("Preserve original filenames", isOn: .constant(true))
+                    .disabled(true)
+                Text("Coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -182,8 +188,14 @@ struct ScrapeConfigurationView: View {
             
             Section("Quick Filters") {
                 Toggle("Skip query parameters", isOn: .constant(false))
+                    .disabled(true)
                 Toggle("Skip hash fragments", isOn: .constant(true))
+                    .disabled(true)
                 Toggle("Skip login/logout pages", isOn: .constant(true))
+                    .disabled(true)
+                Text("Coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -202,27 +214,27 @@ struct ScrapeConfigurationView: View {
             }
             
             Section("Cookies") {
-                Button("Import Cookies...") {
-                    // TODO: Import cookies
-                }
-                
-                Button("Export Cookies...") {
-                    // TODO: Export cookies
-                }
+                Button("Import Cookies...") {}
+                    .disabled(true)
+                Button("Export Cookies...") {}
+                    .disabled(true)
+                Text("Coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section("Authentication") {
-                Button("Configure Login...") {
-                    // TODO: Configure login
-                }
-                .disabled(true)  // Not yet implemented
+                Button("Configure Login...") {}
+                    .disabled(true)
+                Text("Coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section("Proxy") {
                 Toggle("Use Proxy", isOn: .constant(false))
-                    .disabled(true)  // Configured in app settings
-                
-                Text("Configure proxy in application settings")
+                    .disabled(true)
+                Text("Coming in a future update")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

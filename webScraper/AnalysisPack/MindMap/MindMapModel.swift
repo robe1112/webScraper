@@ -242,14 +242,16 @@ struct MindMapStyle: Codable, Hashable, Sendable {
         case spacious = "Spacious"
     }
     
-    nonisolated(unsafe) static let `default` = MindMapStyle(
-        layout: .radial,
-        colorScheme: .automatic,
-        nodeShape: .roundedRect,
-        connectionStyle: .curved,
-        fontSize: .medium,
-        spacing: .normal
-    )
+    nonisolated static var `default`: MindMapStyle {
+        MindMapStyle(
+            layout: .radial,
+            colorScheme: .automatic,
+            nodeShape: .roundedRect,
+            connectionStyle: .curved,
+            fontSize: .medium,
+            spacing: .normal
+        )
+    }
 }
 
 // MARK: - Mind Map Operations

@@ -84,4 +84,12 @@ struct NewProjectTests {
         let result = URLValidator.validate("file:///tmp/test/index.html")
         #expect(result.isValid == true, "file:// URLs should be valid for create")
     }
+
+    @Test("Unix path without file:// is accepted as file URL")
+    func unixPathAcceptedAsFileURL() throws {
+        let result = URLValidator.validate("/Users/test/TestSite/index.html")
+        #expect(result.isValid == true, "Paths like /Users/... should be treated as file URLs")
+        #expect(result.url?.scheme == "file")
+        #expect(result.url?.path == "/Users/test/TestSite/index.html")
+    }
 }

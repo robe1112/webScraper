@@ -307,12 +307,19 @@ struct AnalysisPackSettingsView: View {
             
             Section("OCR") {
                 Toggle("Auto-OCR scanned documents", isOn: .constant(true))
+                    .disabled(true)
                 Toggle("Enable language detection", isOn: .constant(true))
+                    .disabled(true)
+                Text("Coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section("Search") {
                 Toggle("Auto-index new documents", isOn: .constant(true))
+                    .disabled(true)
                 Toggle("Enable semantic search", isOn: .constant(true))
+                    .disabled(true)
             }
         }
         .padding()

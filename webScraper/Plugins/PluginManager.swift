@@ -41,8 +41,8 @@ final class PluginManager: ObservableObject {
     /// Unregister a plugin
     func unregister(identifier: String) {
         if activePlugins[identifier] != nil {
-            Task {
-                await deactivatePlugin(identifier: identifier)
+            Task { @MainActor in
+                deactivatePlugin(identifier: identifier)
             }
         }
         registeredPlugins.removeValue(forKey: identifier)

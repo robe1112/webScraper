@@ -15,13 +15,18 @@ struct URLValidator: Sendable {
     
     /// Validate a URL string
     nonisolated static func validate(_ urlString: String) -> ValidationResult {
-        // Check for empty string
-        guard !urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        var input = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else {
             return .invalid(reason: "URL cannot be empty")
         }
         
+        // Treat absolute Unix paths as file URLs (e.g. /Users/rob/.../TestSite/index.html)
+        if input.hasPrefix("/") && !input.hasPrefix("//") && !input.hasPrefix("///") {
+            input = "file://" + input
+        }
+        
         // Try to create URL
-        guard let url = URL(string: urlString) else {
+        guard let url = URL(string: input) else {
             return .invalid(reason: "Invalid URL format")
         }
         
@@ -40,7 +45,7 @@ struct URLValidator: Sendable {
             guard url.path.isEmpty == false else {
                 return .invalid(reason: "File URL must include a path")
             }
-            return .warning(url: url, message: "Local file - useful for testing with the TestSite")
+            return .warning(url: url, message: "Local file – you can create the project (useful for TestSite)")
         }
         
         // Check for host (http/https only)

@@ -9,7 +9,7 @@ import Foundation
 
 /// Represents a downloaded file from a scrape job
 /// Tracks metadata, location, and duplicate status
-struct DownloadedFile: Identifiable, Codable, Hashable {
+struct DownloadedFile: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     let jobId: UUID
     let projectId: UUID
@@ -53,7 +53,7 @@ struct DownloadedFile: Identifiable, Codable, Hashable {
     let downloadedAt: Date
     var modifiedAt: Date?
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         jobId: UUID,
         projectId: UUID,
@@ -138,7 +138,7 @@ enum DownloadStatus: String, Codable {
 }
 
 /// Basic metadata that can be extracted without Analysis Pack
-struct BasicFileMetadata: Codable, Hashable {
+struct BasicFileMetadata: Codable, Hashable, Sendable {
     // Common
     var creationDate: Date?
     var modificationDate: Date?
@@ -156,7 +156,7 @@ struct BasicFileMetadata: Codable, Hashable {
     // Audio/Video
     var mediaDuration: TimeInterval?
     
-    init(
+    nonisolated init(
         creationDate: Date? = nil,
         modificationDate: Date? = nil,
         pdfPageCount: Int? = nil,
@@ -196,7 +196,7 @@ struct BasicFileMetadata: Codable, Hashable {
 }
 
 /// Group of duplicate files
-struct DuplicateGroup: Identifiable, Codable {
+struct DuplicateGroup: Identifiable, Codable, Sendable {
     let id: UUID
     let hash: String
     var fileIds: [UUID]
@@ -204,7 +204,7 @@ struct DuplicateGroup: Identifiable, Codable {
     var totalSize: Int64
     var duplicateCount: Int
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         hash: String,
         fileIds: [UUID] = [],
@@ -221,7 +221,7 @@ struct DuplicateGroup: Identifiable, Codable {
     }
     
     /// Space that would be saved by removing duplicates
-    var potentialSavings: Int64 {
+    nonisolated var potentialSavings: Int64 {
         guard duplicateCount > 0, fileIds.count > 1 else { return 0 }
         // Total size minus one copy
         return totalSize - (totalSize / Int64(fileIds.count))

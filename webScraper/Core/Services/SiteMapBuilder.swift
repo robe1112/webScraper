@@ -8,7 +8,7 @@
 import Foundation
 
 /// Statistics about a site map
-struct SiteMapStats: Codable {
+struct SiteMapStats: Codable, Sendable {
     var totalNodes: Int
     var totalPages: Int
     var totalResources: Int
@@ -189,14 +189,16 @@ actor SiteMapBuilder {
     }
     
     /// Export as JSON
-    func exportAsJSON() throws -> Data {
+    func exportAsJSON() async throws -> Data {
         let exportData = SiteMapExport(
             generatedAt: Date(),
             rootURL: getRootNode()?.url,
             stats: getStats(),
             nodes: Array(nodes.values)
         )
-        return try JSONEncoder().encode(exportData)
+        return try await MainActor.run {
+            try JSONEncoder().encode(exportData)
+        }
     }
     
     /// Clear all data
@@ -242,7 +244,7 @@ struct SiteMapTree: Identifiable {
     }
 }
 
-struct SiteMapExport: Codable {
+struct SiteMapExport: Codable, Sendable {
     let generatedAt: Date
     let rootURL: String?
     let stats: SiteMapStats

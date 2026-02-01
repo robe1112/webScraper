@@ -32,6 +32,9 @@ final class AppState: ObservableObject {
 
     /// Trigger to refresh project list (e.g. after creating a project)
     @Published var projectListRefreshTrigger = UUID()
+
+    /// Present New Project sheet (for menu command ⌘N)
+    @Published var showNewProjectSheet = false
     
     /// Active downloads count
     @Published var activeDownloads: Int = 0
@@ -43,6 +46,9 @@ final class AppState: ObservableObject {
     
     /// Feature flags for optional packs
     let featureFlags: FeatureFlags
+    
+    /// Global application settings
+    let globalSettings: GlobalSettings
     
     /// Plugin manager for optional feature packs
     let pluginManager: PluginManager
@@ -58,13 +64,16 @@ final class AppState: ObservableObject {
     
     init(
         featureFlags: FeatureFlags? = nil,
+        globalSettings: GlobalSettings? = nil,
         storageProvider: StorageProvider? = nil
     ) {
         // Create defaults in init body (main actor) to avoid isolation issues with default params
         self.featureFlags = featureFlags ?? FeatureFlags()
+        self.globalSettings = globalSettings ?? GlobalSettings()
         self.pluginManager = PluginManager(featureFlags: self.featureFlags)
         self.storageProvider = storageProvider ?? CoreDataStorage()
         
+        self.globalSettings.loadFromDefaults()
         setupBindings()
     }
     
@@ -84,13 +93,23 @@ final class AppState: ObservableObject {
     }
     
     /// Create a new project
-    func createProject(name: String, url: String) async throws -> Project {
+    func createProject(
+        name: String,
+        url: String,
+        storageType: StorageType = .coreData,
+        enableJavaScript: Bool = true,
+        respectRobotsTxt: Bool = true
+    ) async throws -> Project {
+        var settings = ProjectSettings()
+        settings.storageType = storageType
+        settings.enableJavaScript = enableJavaScript
+        settings.respectRobotsTxt = respectRobotsTxt
         let project = Project(
             id: UUID(),
             name: name,
             startURL: url,
             createdAt: Date(),
-            settings: ProjectSettings()
+            settings: settings
         )
         
         try await storageProvider.save(project)

@@ -69,11 +69,11 @@ final class FileStorage: StorageProvider {
     // MARK: - StorageProvider Implementation
     
     func save<T: Codable & Identifiable>(_ item: T) async throws {
+        let data = try encoder.encode(item)
+        let url = fileURL(for: item)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
                 do {
-                    let data = try self.encoder.encode(item)
-                    let url = self.fileURL(for: item)
                     try data.write(to: url)
                     continuation.resume()
                 } catch {
@@ -84,54 +84,58 @@ final class FileStorage: StorageProvider {
     }
     
     func fetch<T: Codable & Identifiable>(predicate: NSPredicate?) async throws -> [T] {
-        try await withCheckedThrowingContinuation { continuation in
+        let directory = directoryForType(T.self)
+        let allItems: [T] = try await withCheckedThrowingContinuation { continuation in
             queue.async {
+                let fm = FileManager.default
+                let dec = JSONDecoder()
+                dec.dateDecodingStrategy = .iso8601
                 do {
-                    let directory = self.directoryForType(T.self)
-                    let files = try self.fileManager.contentsOfDirectory(
+                    let files = try fm.contentsOfDirectory(
                         at: directory,
                         includingPropertiesForKeys: nil
                     ).filter { $0.pathExtension == "json" }
                     
                     var results: [T] = []
-                    
                     for file in files {
                         let data = try Data(contentsOf: file)
-                        let item = try self.decoder.decode(T.self, from: data)
-                        
-                        // Apply predicate filter if provided
-                        if let predicate = predicate {
-                            // Convert to dictionary for predicate evaluation
-                            if let dict = try? JSONSerialization.jsonObject(with: data) as? NSDictionary,
-                               predicate.evaluate(with: dict) {
-                                results.append(item)
-                            }
-                        } else {
-                            results.append(item)
-                        }
+                        let item = try dec.decode(T.self, from: data)
+                        results.append(item)
                     }
-                    
                     continuation.resume(returning: results)
                 } catch {
                     continuation.resume(throwing: StorageError.fetchFailed(error))
                 }
             }
         }
+        // Apply predicate filter on MainActor (NSPredicate is not Sendable)
+        guard let predicate = predicate else { return allItems }
+        let enc = JSONEncoder()
+        enc.dateEncodingStrategy = .iso8601
+        return allItems.filter { item in
+            guard let data = try? enc.encode(item),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return false
+            }
+            return predicate.evaluate(with: dict)
+        }
     }
     
     func fetchById<T: Codable & Identifiable>(_ id: T.ID, type: T.Type) async throws -> T? {
-        try await withCheckedThrowingContinuation { continuation in
+        let url = fileURL(for: id, type: type)
+        return try await withCheckedThrowingContinuation { continuation in
+            let urlCopy = url
             queue.async {
-                let url = self.fileURL(for: id, type: type)
-                
-                guard self.fileManager.fileExists(atPath: url.path) else {
+                let fm = FileManager.default
+                guard fm.fileExists(atPath: urlCopy.path) else {
                     continuation.resume(returning: nil)
                     return
                 }
-                
                 do {
-                    let data = try Data(contentsOf: url)
-                    let item = try self.decoder.decode(T.self, from: data)
+                    let data = try Data(contentsOf: urlCopy)
+                    let dec = JSONDecoder()
+                    dec.dateDecodingStrategy = .iso8601
+                    let item = try dec.decode(T.self, from: data)
                     continuation.resume(returning: item)
                 } catch {
                     continuation.resume(throwing: StorageError.fetchFailed(error))
@@ -141,12 +145,14 @@ final class FileStorage: StorageProvider {
     }
     
     func delete<T: Codable & Identifiable>(_ item: T) async throws {
+        let url = fileURL(for: item)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let urlCopy = url
             queue.async {
+                let fm = FileManager.default
                 do {
-                    let url = self.fileURL(for: item)
-                    if self.fileManager.fileExists(atPath: url.path) {
-                        try self.fileManager.removeItem(at: url)
+                    if fm.fileExists(atPath: urlCopy.path) {
+                        try fm.removeItem(at: urlCopy)
                     }
                     continuation.resume()
                 } catch {
@@ -217,13 +223,17 @@ final class FileStorage: StorageProvider {
     }
     
     func clearAll() async throws {
+        let baseDir = baseDirectory
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
+                let fm = FileManager.default
                 do {
-                    if self.fileManager.fileExists(atPath: self.baseDirectory.path) {
-                        try self.fileManager.removeItem(at: self.baseDirectory)
+                    if fm.fileExists(atPath: baseDir.path) {
+                        try fm.removeItem(at: baseDir)
                     }
-                    self.createDirectoryIfNeeded()
+                    if !fm.fileExists(atPath: baseDir.path) {
+                        try? fm.createDirectory(at: baseDir, withIntermediateDirectories: true)
+                    }
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: StorageError.fileSystemError(error))
@@ -233,15 +243,15 @@ final class FileStorage: StorageProvider {
     }
     
     func export(to url: URL) async throws {
+        let baseDir = baseDirectory
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
+                let fm = FileManager.default
                 do {
-                    // Create a zip of the base directory
-                    // For simplicity, we'll just copy the directory
-                    if self.fileManager.fileExists(atPath: url.path) {
-                        try self.fileManager.removeItem(at: url)
+                    if fm.fileExists(atPath: url.path) {
+                        try fm.removeItem(at: url)
                     }
-                    try self.fileManager.copyItem(at: self.baseDirectory, to: url)
+                    try fm.copyItem(at: baseDir, to: url)
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: StorageError.exportFailed(error))
@@ -251,14 +261,15 @@ final class FileStorage: StorageProvider {
     }
     
     func `import`(from url: URL) async throws {
+        let baseDir = baseDirectory
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async {
+                let fm = FileManager.default
                 do {
-                    // Replace base directory with imported data
-                    if self.fileManager.fileExists(atPath: self.baseDirectory.path) {
-                        try self.fileManager.removeItem(at: self.baseDirectory)
+                    if fm.fileExists(atPath: baseDir.path) {
+                        try fm.removeItem(at: baseDir)
                     }
-                    try self.fileManager.copyItem(at: url, to: self.baseDirectory)
+                    try fm.copyItem(at: url, to: baseDir)
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: StorageError.importFailed(error))

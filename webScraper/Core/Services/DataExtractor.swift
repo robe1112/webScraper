@@ -170,7 +170,7 @@ final class DataExtractor {
     
     // MARK: - Private Extraction Methods
     
-    private func extractWithCSS(selector: String, attribute: String?) throws -> [String] {
+    private nonisolated func extractWithCSS(selector: String, attribute: String?) throws -> [String] {
         if let attr = attribute {
             return parser.selectAttribute(selector, attribute: attr)
         } else {
@@ -178,14 +178,14 @@ final class DataExtractor {
         }
     }
     
-    private func extractWithXPath(expression: String, attribute: String?) throws -> [String] {
+    private nonisolated func extractWithXPath(expression: String, attribute: String?) throws -> [String] {
         // XPath support would require additional library
         // For now, try to convert simple XPath to CSS selector
         let cssSelector = convertXPathToCSS(expression)
         return try extractWithCSS(selector: cssSelector, attribute: attribute)
     }
     
-    private func extractWithRegex(pattern: String) throws -> [String] {
+    private nonisolated func extractWithRegex(pattern: String) throws -> [String] {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
             throw ExtractionError.invalidPattern(pattern)
         }
@@ -216,7 +216,7 @@ final class DataExtractor {
         return results
     }
     
-    private func extractWithJSONPath(path: String) throws -> [String] {
+    private nonisolated func extractWithJSONPath(path: String) throws -> [String] {
         // JSON Path support is simplified
         // Would need a proper JSON Path library for full support
         
@@ -242,7 +242,7 @@ final class DataExtractor {
         return []
     }
     
-    private func extractMeta(name: String) throws -> [String] {
+    private nonisolated func extractMeta(name: String) throws -> [String] {
         let document = parser.parse()
         
         // Check by name
@@ -262,7 +262,7 @@ final class DataExtractor {
     
     // MARK: - Transformations
     
-    private func applyTransformations(_ values: [String], operations: [TransformOperation]) -> [String] {
+    private nonisolated func applyTransformations(_ values: [String], operations: [TransformOperation]) -> [String] {
         var result = values
         
         for operation in operations {
@@ -274,7 +274,7 @@ final class DataExtractor {
         return result
     }
     
-    private func applyOperation(_ operation: TransformOperation, to value: String) -> String {
+    private nonisolated func applyOperation(_ operation: TransformOperation, to value: String) -> String {
         switch operation {
         case .trim:
             return value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -322,7 +322,7 @@ final class DataExtractor {
             // Returns first element after split
             return value.components(separatedBy: separator).first ?? value
             
-        case .join(let separator):
+        case .join:
             // For single values, this is a no-op
             return value
             
@@ -355,7 +355,7 @@ final class DataExtractor {
     
     // MARK: - Helper Methods
     
-    private func convertXPathToCSS(_ xpath: String) -> String {
+    private nonisolated func convertXPathToCSS(_ xpath: String) -> String {
         // Very simplified XPath to CSS conversion
         var css = xpath
         
@@ -380,7 +380,7 @@ final class DataExtractor {
         return css.trimmingCharacters(in: .whitespaces)
     }
     
-    private func evaluateSimpleJSONPath(_ path: String, in json: [String: Any]) -> Any? {
+    private nonisolated func evaluateSimpleJSONPath(_ path: String, in json: [String: Any]) -> Any? {
         // Remove leading $. if present
         var cleanPath = path
         if cleanPath.hasPrefix("$.") {

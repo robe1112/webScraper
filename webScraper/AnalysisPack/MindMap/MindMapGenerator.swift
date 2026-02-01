@@ -24,14 +24,16 @@ struct MindMapGenerationOptions {
         case relevance
     }
     
-    nonisolated(unsafe) static let `default` = MindMapGenerationOptions(
-        maxDepth: 5,
-        maxNodesPerLevel: 10,
-        includeMetadata: true,
-        groupByType: true,
-        sortBy: .frequency,
-        style: .default
-    )
+    nonisolated static var `default`: MindMapGenerationOptions {
+        MindMapGenerationOptions(
+            maxDepth: 5,
+            maxNodesPerLevel: 10,
+            includeMetadata: true,
+            groupByType: true,
+            sortBy: .frequency,
+            style: .default
+        )
+    }
 }
 
 /// Generates mind maps from various data sources

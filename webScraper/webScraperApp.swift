@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 struct webScraperApp: App {
@@ -27,52 +28,45 @@ struct webScraperApp: App {
                 }
         }
         .commands {
-            // File menu
             CommandGroup(replacing: .newItem) {
                 Button("New Project") {
-                    // TODO: Implement new project
+                    appState.showNewProjectSheet = true
                 }
                 .keyboardShortcut("n", modifiers: .command)
                 
                 Divider()
                 
-                Button("Import Project...") {
-                    // TODO: Implement import
-                }
-                .keyboardShortcut("i", modifiers: [.command, .shift])
+                Button("Import Project...") {}
+                    .disabled(true)
+                    .keyboardShortcut("i", modifiers: [.command, .shift])
                 
-                Button("Export Project...") {
-                    // TODO: Implement export
-                }
-                .keyboardShortcut("e", modifiers: [.command, .shift])
+                Button("Export Project...") {}
+                    .disabled(true)
+                    .keyboardShortcut("e", modifiers: [.command, .shift])
             }
             
             // Edit menu additions
             CommandGroup(after: .pasteboard) {
                 Divider()
                 
-                Button("Find in Project") {
-                    // TODO: Implement find
-                }
-                .keyboardShortcut("f", modifiers: [.command, .shift])
+                Button("Find in Project") {}
+                    .disabled(true)
+                    .keyboardShortcut("f", modifiers: [.command, .shift])
             }
             
             // View menu
             CommandMenu("Scraping") {
-                Button("Start Scrape") {
-                    // TODO: Implement start scrape
-                }
-                .keyboardShortcut("r", modifiers: .command)
+                Button("Start Scrape") {}
+                    .disabled(true)
+                    .keyboardShortcut("r", modifiers: .command)
                 
-                Button("Pause Scrape") {
-                    // TODO: Implement pause
-                }
-                .keyboardShortcut(".", modifiers: .command)
+                Button("Pause Scrape") {}
+                    .disabled(true)
+                    .keyboardShortcut(".", modifiers: .command)
                 
-                Button("Stop Scrape") {
-                    // TODO: Implement stop
-                }
-                .keyboardShortcut(".", modifiers: [.command, .shift])
+                Button("Stop Scrape") {}
+                    .disabled(true)
+                    .keyboardShortcut(".", modifiers: [.command, .shift])
                 
                 Divider()
                 
@@ -94,19 +88,16 @@ struct webScraperApp: App {
             
             // Help menu
             CommandGroup(replacing: .help) {
-                Button("webScraper Help") {
-                    // TODO: Open help
-                }
+                Button("webScraper Help") {}
+                    .disabled(true)
                 
                 Divider()
                 
-                Button("Report an Issue...") {
-                    // TODO: Open issue reporter
-                }
+                Button("Report an Issue...") {}
+                    .disabled(true)
                 
-                Button("Check for Updates...") {
-                    // TODO: Check updates
-                }
+                Button("Check for Updates...") {}
+                    .disabled(true)
             }
         }
         
@@ -134,16 +125,19 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralSettingsView()
+                .environmentObject(appState.globalSettings)
                 .tabItem {
                     Label("General", systemImage: "gear")
                 }
             
             ScrapingSettingsView()
+                .environmentObject(appState.globalSettings)
                 .tabItem {
                     Label("Scraping", systemImage: "globe")
                 }
             
             DownloadSettingsView()
+                .environmentObject(appState.globalSettings)
                 .tabItem {
                     Label("Downloads", systemImage: "arrow.down.circle")
                 }
@@ -158,35 +152,50 @@ struct SettingsView: View {
                     Label("Plugins", systemImage: "puzzlepiece.extension")
                 }
         }
-        .frame(width: 500, height: 400)
+        .frame(width: 550, height: 450)
     }
 }
 
-// MARK: - Settings Subviews (Placeholders)
+// MARK: - General Settings
 
 struct GeneralSettingsView: View {
+    @EnvironmentObject var globalSettings: GlobalSettings
     @EnvironmentObject var featureFlags: FeatureFlags
     
     var body: some View {
         Form {
-            Section("Storage") {
-                Picker("Default Storage Type", selection: .constant(StorageType.coreData)) {
+            Section("Default Storage") {
+                Picker("Storage Type", selection: $globalSettings.defaultStorageType) {
                     ForEach(StorageType.allCases, id: \.self) { type in
                         Text(type.rawValue).tag(type)
                     }
                 }
+                Text("Default for new projects (can be changed per-project)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section("Memory") {
-                Slider(
-                    value: Binding(
-                        get: { Double(featureFlags.maxMemoryUsageMB) },
-                        set: { featureFlags.maxMemoryUsageMB = Int($0) }
-                    ),
-                    in: 1024...32768,
-                    step: 1024
-                ) {
+                VStack(alignment: .leading) {
                     Text("Max Memory: \(featureFlags.maxMemoryUsageMB) MB")
+                    Slider(
+                        value: Binding(
+                            get: { Double(featureFlags.maxMemoryUsageMB) },
+                            set: { featureFlags.maxMemoryUsageMB = Int($0) }
+                        ),
+                        in: 1024...32768,
+                        step: 1024
+                    )
+                    Text("Recommended: \(FeatureFlags.recommendedMemoryLimit()) MB")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Section {
+                Button("Reset to Defaults") {
+                    globalSettings.resetToDefaults()
+                    featureFlags.resetToDefaults()
                 }
             }
         }
@@ -194,66 +203,110 @@ struct GeneralSettingsView: View {
     }
 }
 
+// MARK: - Scraping Settings
+
 struct ScrapingSettingsView: View {
+    @EnvironmentObject var globalSettings: GlobalSettings
+    
     var body: some View {
         Form {
             Section("Default Settings") {
-                TextField("User Agent", text: .constant("WebScraperBot/1.0"))
-                Toggle("Respect robots.txt", isOn: .constant(true))
-                Toggle("Enable JavaScript", isOn: .constant(true))
+                TextField("User Agent", text: $globalSettings.defaultUserAgent)
+                    .textFieldStyle(.roundedBorder)
+                Toggle("Respect robots.txt", isOn: $globalSettings.defaultRespectRobotsTxt)
+                Toggle("Enable JavaScript", isOn: $globalSettings.defaultEnableJavaScript)
+                Text("These defaults apply to new scrape jobs")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section("Rate Limiting") {
-                Stepper("Request Delay: 1000ms", value: .constant(1000), in: 100...10000, step: 100)
-                Stepper("Max Concurrent: 4", value: .constant(4), in: 1...20)
+                Stepper("Request Delay: \(globalSettings.defaultRequestDelayMs)ms",
+                        value: $globalSettings.defaultRequestDelayMs,
+                        in: 100...10000,
+                        step: 100)
+                Stepper("Max Concurrent: \(globalSettings.defaultMaxConcurrentRequests)",
+                        value: $globalSettings.defaultMaxConcurrentRequests,
+                        in: 1...20)
             }
         }
         .padding()
     }
 }
 
+// MARK: - Download Settings
+
 struct DownloadSettingsView: View {
+    @EnvironmentObject var globalSettings: GlobalSettings
+    @State private var showFolderPicker = false
+    
     var body: some View {
         Form {
             Section("Download Location") {
                 HStack {
-                    Text("~/Documents/webScraper/Downloads")
+                    Text(globalSettings.downloadLocation.path)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("Choose...") {}
+                    Button("Choose...") {
+                        showFolderPicker = true
+                    }
                 }
             }
             
-            Section("File Types") {
-                Toggle("Images", isOn: .constant(true))
-                Toggle("PDFs", isOn: .constant(true))
-                Toggle("Documents", isOn: .constant(true))
-                Toggle("Audio", isOn: .constant(false))
-                Toggle("Video", isOn: .constant(false))
+            Section("Default File Types") {
+                Toggle("Images", isOn: $globalSettings.defaultDownloadImages)
+                Toggle("PDFs", isOn: $globalSettings.defaultDownloadPDFs)
+                Toggle("Documents", isOn: $globalSettings.defaultDownloadDocuments)
+                Toggle("Audio", isOn: $globalSettings.defaultDownloadAudio)
+                Toggle("Video", isOn: $globalSettings.defaultDownloadVideo)
+                Text("These defaults apply to new scrape jobs")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding()
+        .fileImporter(
+            isPresented: $showFolderPicker,
+            allowedContentTypes: [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                globalSettings.downloadLocation = url
+            }
+        }
     }
 }
+
+// MARK: - Proxy Settings (Not Yet Implemented)
 
 struct ProxySettingsView: View {
     var body: some View {
         Form {
             Section("Proxy Configuration") {
                 Toggle("Enable Proxy", isOn: .constant(false))
+                    .disabled(true)
                 TextField("Host", text: .constant(""))
+                    .disabled(true)
                 TextField("Port", text: .constant(""))
-                
+                    .disabled(true)
                 Picker("Type", selection: .constant(ProxyManager.ProxyType.http)) {
                     ForEach(ProxyManager.ProxyType.allCases, id: \.self) { type in
                         Text(type.rawValue).tag(type)
                     }
                 }
+                .disabled(true)
+                Text("Coming in a future update")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding()
     }
 }
+
+// MARK: - Plugin Settings
 
 struct PluginSettingsView: View {
     @EnvironmentObject var featureFlags: FeatureFlags
@@ -277,6 +330,13 @@ struct PluginSettingsView: View {
                 Toggle("Use Local Models", isOn: $featureFlags.localLLMEnabled)
                 Toggle("Allow Cloud Models", isOn: $featureFlags.cloudLLMEnabled)
                 Toggle("Prefer Local Models", isOn: $featureFlags.preferLocalModels)
+            }
+            
+            Section("Experimental") {
+                Toggle("Enable Experimental Features", isOn: $featureFlags.experimentalFeaturesEnabled)
+                Text("May be unstable or incomplete")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding()
